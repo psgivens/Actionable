@@ -17,20 +17,6 @@ open Microsoft.Owin.Security.OAuth
 open Microsoft.Owin.Security.Cookies
 
 open System.Threading.Tasks
-[<AutoOpen>]
-module Async =
-    let inline awaitPlainTask (task: Task) = 
-        // rethrow exception from preceding task if it fauled
-        let continuation (t : Task) : unit =
-            match t.IsFaulted with
-            | true -> raise t.Exception
-            | arg -> ()
-        task.ContinueWith continuation |> Async.AwaitTask
-
-    let inline startAsPlainTask (work : Async<unit>) = 
-        work |> Async.StartAsTask :> Task
-        //Task.Factory.StartNew (
-        //    fun () -> work |> Async.StartAsTask :> Task)
 
 type ApplicationOAuthProvider (publicClientId:string) =
     inherit OAuthAuthorizationServerProvider ()
@@ -43,7 +29,7 @@ type ApplicationOAuthProvider (publicClientId:string) =
         |> System.Collections.Generic.Dictionary<String,String>
         |> AuthenticationProperties
         
-    override this.GrantResourceOwnerCredentials (context:OAuthGrantResourceOwnerCredentialsContext) : System.Threading.Tasks.Task =
+    override this.GrantResourceOwnerCredentials (context:OAuthGrantResourceOwnerCredentialsContext) : Task =
         async {            
             let userManager = context.OwinContext.GetUserManager<ApplicationUserManager>()
             let! user = 

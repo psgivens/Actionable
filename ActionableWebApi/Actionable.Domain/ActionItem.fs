@@ -1,6 +1,5 @@
 ﻿module Actionable.Domain.ActionItemModule
 
-//type ActionItem = { Title:string; Description:string; Status: int16 }
 type ActionItem = { Fields: Map<string,string> }
     
 type ActionItemCommand = 
@@ -16,7 +15,7 @@ type ActionItemEvent =
     | Completed
 
 type ActionItemState = 
-    | None
+    | DoesNotExist
     | State of ActionItem
     
 type InvalidCommand (state:ActionItemState, command:ActionItemCommand) =
@@ -26,7 +25,7 @@ type InvalidEvent (state:ActionItemState, event: ActionItemEvent) =
     inherit System.Exception(sprintf "Invalid event.\n\event: %A\n\tstate: %A" event state)
 
 let handle = function    
-    | None, Create (fields) -> Created ({Fields=fields|>Map.add "actionable.status" "0"})
+    | DoesNotExist, Create (fields) -> Created ({Fields=fields|>Map.add "actionable.status" "0"})
     | State(item), Update (fields) -> 
         // TODO: Verify that key/value make sense
 
@@ -42,17 +41,15 @@ module Map =
 
 let evolveState state event =
     match state, event with
-    | None, Created (item) -> State (item)
+    | DoesNotExist, Created (item) -> State (item)
     | State (item), Updated (fields) -> 
-        let fields' = item.Fields |> Map.merge fields
-        let fields'' = fields |> Map.merge item.Fields
         State (
             {item with 
                 Fields = item.Fields |> Map.merge fields})
     | State (item), Completed -> 
         State (
             {item with Fields = item.Fields |> Map.add "actionable.status" "1"})
-    | State (item), Deleted -> None
+    | State (item), Deleted -> DoesNotExist
     | s, e -> raise <| InvalidEvent (s,e)
 
 let buildState =

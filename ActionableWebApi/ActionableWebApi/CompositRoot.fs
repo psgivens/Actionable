@@ -3,9 +3,8 @@
 open System.Web.Http.Dispatcher
 open System.Web.Http.Controllers;
 
-//open Actionable.Domain.Infrastructure
 open Actionable.Domain.ActionItemModule
-//open Actionable.Domain.Infrastructure.Envelope
+
 
 type CompositRoot () = 
     let actionItemAgent = new ActionItemAggregateAgent ()
@@ -15,9 +14,9 @@ type CompositRoot () =
 
     interface IHttpControllerActivator with
         member this.Create (request, controllerDescriptor, controllerType) =
-            if controllerType = typeof<ActionsController> then
+            match controllerType with
+            | t when t = typeof<ActionsController> -> 
                 new ActionsController (actionItemAgent) :> IHttpController
-            else
-                System.Activator.CreateInstance(controllerType) :?> IHttpController
+            | _ -> System.Activator.CreateInstance(controllerType) :?> IHttpController
 
    

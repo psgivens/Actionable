@@ -5,76 +5,27 @@ open System.Net
 open System.Net.Http
 open System.Web.Http
 
-open Actionable.Data
 open System.Security.Principal
 open Microsoft.AspNet.Identity
-//open Actionable.Domain.Infrastructure.Envelope
 
-type HomeRendition () =
-    [<DefaultValue>] val mutable Message : string
-    [<DefaultValue>] val mutable Time : string
-
-type ResponseCode () =
-    [<DefaultValue>] val mutable Message : string
-    [<DefaultValue>] val mutable Time : string
-     
-type HomeController() =
-    inherit ApiController()
-    member this.Get() =
-        this.Request.CreateResponse(
-            HttpStatusCode.OK,
-            HomeRendition(
-                Message = "Hello from F#",
-                Time = DateTimeOffset.Now.ToString("o")))
-
-[<CLIMutable>]
-type DeleteActionItemRendition = {
-    ActionItemId: string
-}
-
-[<CLIMutable>]
-type AddActionItemRendition = {
-    Id: string
-//    Title: string
-//    Description: string
-//    Status: string
-    Fields: Map<string,string>
-    Date : string }
-
-//[<CLIMutable>]
-//type ReadActionItemRendition = {
-//    Title: string
-//    Description: string
-//    Status: string
-//    Id: string
-//}
-
-type FieldRendition = {
-    Key: string
-    Value: string
-}
+open Actionable.Data
 
 //open Composition
 open Actionable.Domain.ActionItemModule
 open Actionable.Domain.Infrastructure
-open Actionable.Domain.ActionItemModule
 open Actionable.Domain.Infrastructure.Envelope
 
 open Actionable.Domain.Persistance.EventSourcing.EF
 
-type ResponseToQuery () =
-    [<DefaultValue>] val mutable Results : ActionItemReadModel list
-    [<DefaultValue>] val mutable Time : string
-
 type ActionItemAggregateAgent () = 
     inherit AggregateAgent<ActionItem, ActionItemState, ActionItemCommand, ActionItemEvent> (
-        None, Actionable.Domain.Persistance.EventSourcing.EF.ActionItemEventStore(), 
+        DoesNotExist, Actionable.Domain.Persistance.EventSourcing.EF.ActionItemEventStore(), 
         buildState, 
         handle) 
 
 type ActionItemPersistingAgent () = 
     inherit PersistingAgent<ActionItem, ActionItemState, ActionItemCommand, ActionItemEvent> (
-        None, Actionable.Domain.Persistance.EventSourcing.EF.ActionItemEventStore(), 
+        DoesNotExist, Actionable.Domain.Persistance.EventSourcing.EF.ActionItemEventStore(), 
         buildState, 
         Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
             

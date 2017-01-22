@@ -5,6 +5,7 @@ open Actionable.Domain.ActionItemModule
 open Newtonsoft.Json
 open Actionable.Data
 
+
 type Actionable.Data.ActionableDbContext with 
     member this.GetActionItemEvents streamId :seq<Envelope<ActionItemEvent>>= 
         query {
@@ -49,7 +50,7 @@ type ActionItemEventStore () =
                     | ex -> System.Diagnostics.Debugger.Break () 
                 }
 
-let mapToFields<'a when 'a :> FieldInstanceBase> 
+let mapFieldValuesToDefinitions<'a when 'a :> FieldInstanceBase> 
         (fieldDefs:((int * (FieldDefinition seq)) seq))
         (fields:Map<string,string>)     
         (fieldType:FieldType)
@@ -78,7 +79,7 @@ let mapToFields'<'a when 'a :> FieldInstanceBase>
     (fields:Map<string,string>)     
     (fieldType:FieldType)
     (constructField:(FieldDefinition*string)->'a) = 
-    System.Collections.Generic.List<'a>() |> mapToFields fieldDefs fields fieldType constructField (fun x y -> ())
+    System.Collections.Generic.List<'a>() |> mapFieldValuesToDefinitions fieldDefs fields fieldType constructField (fun x y -> ())
 
 let persistActionItem userId (streamId:StreamId) state = 
     async {
@@ -87,7 +88,7 @@ let persistActionItem userId (streamId:StreamId) state =
             let! entity = context.TaskInstances.FindAsync(streamId) |> Async.AwaitTask
 
             match state with
-            | None -> 
+            | DoesNotExist -> 
                 match entity with
                 | null -> ()
                 | entity ->
@@ -119,13 +120,13 @@ let persistActionItem userId (streamId:StreamId) state =
                         )) |> ignore
                     do! Async.AwaitTask (context.SaveChangesAsync()) |> Async.Ignore  
                 | entity ->
-                    entity.IntFields |> mapToFields groupedFields item.Fields FieldType.Int (fun (d,v) ->
+                    entity.IntFields |> mapFieldValuesToDefinitions groupedFields item.Fields FieldType.Int (fun (d,v) ->
                         IntFieldInstance(FieldDefinition = d, Value = System.Int32.Parse v)) (fun i v ->
                         i.Value <- System.Int32.Parse v) |> ignore
-                    entity.StringFields |> mapToFields groupedFields item.Fields FieldType.String (fun (d,v) ->
+                    entity.StringFields |> mapFieldValuesToDefinitions groupedFields item.Fields FieldType.String (fun (d,v) ->
                         StringFieldInstance(FieldDefinition = d, Value = v)) (fun i v ->
                         i.Value <- v) |> ignore
-                    entity.DateFields |> mapToFields groupedFields item.Fields FieldType.DateTime (fun (d,v) ->
+                    entity.DateFields |> mapFieldValuesToDefinitions groupedFields item.Fields FieldType.DateTime (fun (d,v) ->
                         DateTimeFieldInstance(FieldDefinition = d, Value = System.DateTimeOffset.Parse v)) (fun i v ->
                         i.Value <- System.DateTimeOffset.Parse v) |> ignore
                     do! Async.AwaitTask (context.SaveChangesAsync()) |> Async.Ignore  
@@ -152,5 +153,3 @@ let mapToActionItemReadModel (task:TaskTypeInstance) =
             |> Seq.toList) |> Map.ofList
         Id = task.Id.ToString() 
         UserId = task.UserIdentity }
-
-

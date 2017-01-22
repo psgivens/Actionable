@@ -43,7 +43,7 @@ type AccountController (userManager:ApplicationUserManager, accessTokenFormat:IS
     [<Route("UserInfo")>]
     member this.GetUserInfo () : UserInfoViewModel =
         let externalLogin = ExternalLoginData.FromIdentity(this.User.Identity :?> ClaimsIdentity)
-        let hasExernalLogin = externalLogin = null
+        let hasExernalLogin = externalLogin <> null
         let loginProvider = if (externalLogin = null) then null else externalLogin.LoginProvider
         UserInfoViewModel (this.User.Identity.GetUserName(), hasExernalLogin, loginProvider)
 
@@ -71,7 +71,7 @@ type AccountController (userManager:ApplicationUserManager, accessTokenFormat:IS
     // POST api/Account/Register
     [<AllowAnonymous>]
     [<Route("Register")>]
-    member this.Register (model:RegisterBindingModel) :Task<IHttpActionResult> =         
+    member this.Register (model:RegisterBindingRendition) :Task<IHttpActionResult> =         
         
         async {
             if (not this.ModelState.IsValid) then return this.badRequestModel () :> IHttpActionResult
