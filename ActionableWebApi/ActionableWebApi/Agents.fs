@@ -63,7 +63,7 @@ type AggregateAgent<'TType, 'TState, 'TCommand, 'TEvent>
                     let nevent = handle (state, cmdenv.Item)
 
                     // publish new event
-                    let envelope = envelopWithDefaults cmdenv.UserId cmdenv.TransactionId cmdenv.StreamId (version + 1s) nevent
+                    let envelope = envelopWithDefaults cmdenv.UserId cmdenv.DeviceId cmdenv.TransactionId cmdenv.StreamId (version + 1s) nevent
                     do! store.AppendEventAsync cmdenv.StreamId envelope 
 
                     communicationAgent.Post <| Message envelope

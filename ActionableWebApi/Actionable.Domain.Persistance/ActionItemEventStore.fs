@@ -7,7 +7,7 @@ open Actionable.Data
 
 
 type Actionable.Data.ActionableDbContext with 
-    member this.GetActionItemEvents streamId :seq<Envelope<ActionItemEvent>>= 
+    member this.GetActionItemEvents<'a> streamId :seq<Envelope<'a>>= 
         query {
             for event in this.ActionItemEvents do
             where (event.StreamId = streamId)
@@ -16,19 +16,48 @@ type Actionable.Data.ActionableDbContext with
                 {
                     Id = event.Id
                     UserId = event.UserId
+                    DeviceId = event.DeviceId
                     StreamId = streamId
                     TransactionId = event.TransactionId
                     Version = event.Version
                     Created = event.TimeStamp
-                    Item = (JsonConvert.DeserializeObject<ActionItemEvent> event.Event)
+                    Item = (JsonConvert.DeserializeObject<'a> event.Event)
                 }
             )
+
+
+type GenericEventStore<'a> () =
+    interface IEventStore<Envelope<'a>> with
+        member this.GetEvents (streamId:StreamId) =
+            use context = new ActionableDbContext ()
+            context.GetActionItemEvents streamId 
+            |> Seq.toList 
+            |> List.sortBy(fun x -> x.Version)
+        member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<'a>) =
+            async { 
+                try
+                    use context = new ActionableDbContext ()
+                    context.ActionItemEvents.Add (
+                        ActionItemEnvelopeEntity (  Id = envelope.Id,
+                                                    StreamId = envelope.StreamId,
+                                                    UserId = envelope.UserId,
+                                                    TransactionId = envelope.TransactionId,
+                                                    Version = envelope.Version,
+                                                    TimeStamp = envelope.Created,
+                                                    Event = JsonConvert.SerializeObject(envelope.Item)
+                                                    )) |> ignore         
+                    do! Async.AwaitTask (context.SaveChangesAsync()) |> Async.Ignore 
+                    do! async.Zero ()
+                with
+                    | ex -> System.Diagnostics.Debugger.Break () 
+                }
+
 
 type ActionItemEventStore () =
     interface IEventStore<Envelope<ActionItemEvent>> with
         member this.GetEvents (streamId:StreamId) =
             use context = new ActionableDbContext ()
-            context.GetActionItemEvents streamId 
+            context.GetActionItemEvents<ActionItemEvent> streamId 
             |> Seq.toList 
             |> List.sortBy(fun x -> x.Version)
         member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<ActionItemEvent>) =

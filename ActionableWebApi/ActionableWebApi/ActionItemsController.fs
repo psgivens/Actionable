@@ -13,23 +13,10 @@ open Actionable.Data
 //open Composition
 open Actionable.Domain.ActionItemModule
 open Actionable.Domain.Infrastructure
-open Actionable.Domain.Infrastructure.Envelope
 
 open Actionable.Domain.Persistance.EventSourcing.EF
-
-type ActionItemAggregateAgent () = 
-    inherit AggregateAgent<ActionItem, ActionItemState, ActionItemCommand, ActionItemEvent> (
-        DoesNotExist, Actionable.Domain.Persistance.EventSourcing.EF.ActionItemEventStore(), 
-        buildState, 
-        handle) 
-
-type ActionItemPersistingAgent () = 
-    inherit PersistingAgent<ActionItem, ActionItemState, ActionItemCommand, ActionItemEvent> (
-        DoesNotExist, Actionable.Domain.Persistance.EventSourcing.EF.ActionItemEventStore(), 
-        buildState, 
-        Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
             
-type ActionsController (actionItemAgent:ActionItemAggregateAgent) = 
+type ActionsController (post:Envelope<ActionItemCommand>->unit) =
     inherit ApiController ()
     let (|GuidPattern|_|) guid = 
         match Guid.TryParse guid with 
@@ -42,15 +29,17 @@ type ActionsController (actionItemAgent:ActionItemAggregateAgent) =
             | GuidPattern id ->
                 envelopWithDefaults 
                     (this.User.Identity.GetUserId()) 
+                    (System.Web.HttpContext.Current.Session.SessionID)
                     (Guid.NewGuid()) id 
                     0s (Update(item.Fields))
             | _ ->
                 envelopWithDefaults 
                     (this.User.Identity.GetUserId()) 
+                    (System.Web.HttpContext.Current.Session.SessionID)
                     (Guid.NewGuid()) (Guid.NewGuid())
                     0s (Create(item.Fields))
 
-        actionItemAgent.Post envelope
+        post envelope
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             ResponseCode(
@@ -61,10 +50,11 @@ type ActionsController (actionItemAgent:ActionItemAggregateAgent) =
         let envelope =
             envelopWithDefaults
                 (this.User.Identity.GetUserId())        
+                (System.Web.HttpContext.Current.Session.SessionID)
                 (Guid.NewGuid()) (Guid.Parse(item.ActionItemId))
                 0s (Delete)
 
-        actionItemAgent.Post envelope
+        post envelope
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             ResponseCode(

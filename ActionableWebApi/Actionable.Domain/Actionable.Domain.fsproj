@@ -53,7 +53,8 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Infrastructure.fs" />
     <Compile Include="ActionItem.fs" />
-    <Compile Include="Notifications.fs" />
+    <Compile Include="UserNotifications.fs" />
+    <Compile Include="SessionNotifications.fs" />
     <Content Include="packages.config" />
     <Content Include="App.config" />
   </ItemGroup>

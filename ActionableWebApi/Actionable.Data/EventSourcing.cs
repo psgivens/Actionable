@@ -14,6 +14,7 @@ namespace Actionable.Data {
         public virtual Guid TransactionId { get; set; }
         [Column(Order = 2), Key]
         public virtual string UserId { get; set; }
+        public virtual string DeviceId { get; set; }
         public virtual short Version { get; set; }
         public virtual Guid Id { get; set; }
         public virtual DateTimeOffset TimeStamp { get; set; }
