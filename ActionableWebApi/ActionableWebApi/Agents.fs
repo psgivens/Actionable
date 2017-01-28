@@ -54,7 +54,7 @@ type AggregateAgent<'TType, 'TState, 'TCommand, 'TEvent>
                 
                     let version = 
                         if events |> List.isEmpty then 0s
-                        else events |> List.last |> (fun e -> e.Version)
+                        else events |> List.last |> (fun e -> unbox e.Version)
 
                     // Build current state
                     let state = buildState uninitialized (events |> List.map unpack)
@@ -63,7 +63,14 @@ type AggregateAgent<'TType, 'TState, 'TCommand, 'TEvent>
                     let nevent = handle (state, cmdenv.Item)
 
                     // publish new event
-                    let envelope = envelopWithDefaults cmdenv.UserId cmdenv.DeviceId cmdenv.TransactionId cmdenv.StreamId (version + 1s) nevent
+                    let envelope = 
+                        envelopWithDefaults 
+                            cmdenv.UserId 
+                            cmdenv.DeviceId 
+                            cmdenv.TransactionId 
+                            cmdenv.StreamId 
+                            (Version(version + 1s)) 
+                            nevent
                     do! store.AppendEventAsync cmdenv.StreamId envelope 
 
                     communicationAgent.Post <| Message envelope
@@ -88,7 +95,7 @@ type PersistingAgent<'TType, 'TState, 'TCommand, 'TEvent>
         (uninitialized:'TState,
          store:IEventStore<Envelope<'TEvent>>, 
          buildState:'TState -> 'TEvent list -> 'TState,
-         persist:string -> Guid -> 'TState -> Async<unit>) =
+         persist:UserId -> StreamId -> 'TState -> Async<unit>) =
 
     let eventSubject = new Subjects.Subject<Envelope<'TEvent>> ()
     let communicationAgent = new Agent<AgentCommunication<Envelope<'TEvent>>>(fun inbox ->
@@ -135,11 +142,11 @@ type PersistingAgent<'TType, 'TState, 'TCommand, 'TEvent>
 
                 // Get the CSP
                 let (cspMap', csp) = 
-                    match cspMap.TryFind evtenv.StreamId with
+                    match cspMap.TryFind <| unbox evtenv.StreamId with
                     | Option.Some (csp') -> (cspMap, csp')
                     | Option.None -> 
                         let csp' = createCsp ()
-                        (cspMap.Add (evtenv.StreamId, csp'), csp')
+                        (cspMap.Add (unbox evtenv.StreamId, csp'), csp')
 
                 // Post to it 
                 csp.Post evtenv

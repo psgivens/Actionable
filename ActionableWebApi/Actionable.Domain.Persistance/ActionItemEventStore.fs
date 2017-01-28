@@ -7,19 +7,19 @@ open Actionable.Data
 
 
 type Actionable.Data.ActionableDbContext with 
-    member this.GetActionItemEvents<'a> streamId :seq<Envelope<'a>>= 
+    member this.GetActionItemEvents<'a> (streamId:StreamId) :seq<Envelope<'a>>= 
         query {
             for event in this.ActionItemEvents do
-            where (event.StreamId = streamId)
+            where (event.StreamId = unbox streamId)
             select event
         } |> Seq.map (fun event ->
                 {
                     Id = event.Id
-                    UserId = event.UserId
-                    DeviceId = event.DeviceId
+                    UserId = UserId event.UserId
+                    DeviceId = DeviceId event.DeviceId
                     StreamId = streamId
-                    TransactionId = event.TransactionId
-                    Version = event.Version
+                    TransactionId = TransId event.TransactionId
+                    Version = Version event.Version
                     Created = event.TimeStamp
                     Item = (JsonConvert.DeserializeObject<'a> event.Event)
                 }
@@ -39,10 +39,10 @@ type GenericEventStore<'a> () =
                     use context = new ActionableDbContext ()
                     context.ActionItemEvents.Add (
                         ActionItemEnvelopeEntity (  Id = envelope.Id,
-                                                    StreamId = envelope.StreamId,
-                                                    UserId = envelope.UserId,
-                                                    TransactionId = envelope.TransactionId,
-                                                    Version = envelope.Version,
+                                                    StreamId = unbox envelope.StreamId,
+                                                    UserId = unbox envelope.UserId,
+                                                    TransactionId = unbox envelope.TransactionId,
+                                                    Version = unbox envelope.Version,
                                                     TimeStamp = envelope.Created,
                                                     Event = JsonConvert.SerializeObject(envelope.Item)
                                                     )) |> ignore         
@@ -66,10 +66,10 @@ type ActionItemEventStore () =
                     use context = new ActionableDbContext ()
                     context.ActionItemEvents.Add (
                         ActionItemEnvelopeEntity (  Id = envelope.Id,
-                                                    StreamId = envelope.StreamId,
-                                                    UserId = envelope.UserId,
-                                                    TransactionId = envelope.TransactionId,
-                                                    Version = envelope.Version,
+                                                    StreamId = unbox envelope.StreamId,
+                                                    UserId = unbox envelope.UserId,
+                                                    TransactionId = unbox envelope.TransactionId,
+                                                    Version = unbox envelope.Version,
                                                     TimeStamp = envelope.Created,
                                                     Event = JsonConvert.SerializeObject(envelope.Item)
                                                     )) |> ignore         
@@ -110,7 +110,7 @@ let mapToFields'<'a when 'a :> FieldInstanceBase>
     (constructField:(FieldDefinition*string)->'a) = 
     System.Collections.Generic.List<'a>() |> mapFieldValuesToDefinitions fieldDefs fields fieldType constructField (fun x y -> ())
 
-let persistActionItem userId (streamId:StreamId) state = 
+let persistActionItem (userId:UserId) (streamId:StreamId) state = 
     async {
         try
             use context = new ActionableDbContext ()
@@ -137,9 +137,9 @@ let persistActionItem userId (streamId:StreamId) state =
                 | null ->
                     context.TaskInstances.Add (
                         TaskTypeInstance(   
-                            Id = streamId,
+                            Id = unbox streamId,
                             TaskTypeDefinition = typeDef,
-                            UserIdentity = userId,
+                            UserIdentity = unbox userId,
                             IntFields = mapToFields' groupedFields item.Fields FieldType.Int (fun (d,v) ->
                                 IntFieldInstance(FieldDefinition = d, Value = System.Int32.Parse v)),
                             StringFields = mapToFields' groupedFields item.Fields FieldType.String (fun (d,v) ->

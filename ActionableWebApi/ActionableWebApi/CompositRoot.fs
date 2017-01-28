@@ -39,7 +39,7 @@ type CompositRoot () =
     let actionItemAgent = new ActionItemAggregateAgent ()
     let actionItemPersister = new ActionItemPersistingAgent ()
 
-    do actionItemAgent.Subscribe  
+    do actionItemAgent.Subscribe
         ((fun env ->
             actionItemPersister.Post env
         ), (fun (ex:Exception) -> ()

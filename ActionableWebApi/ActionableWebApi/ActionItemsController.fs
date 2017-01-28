@@ -28,16 +28,20 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit) =
             match item.Id with 
             | GuidPattern id ->
                 envelopWithDefaults 
-                    (this.User.Identity.GetUserId()) 
-                    (System.Web.HttpContext.Current.Session.SessionID)
-                    (Guid.NewGuid()) id 
-                    0s (Update(item.Fields))
+                    (UserId <| this.User.Identity.GetUserId()) 
+                    (DeviceId <| System.Web.HttpContext.Current.Session.SessionID)
+                    (TransId.create ()) 
+                    (StreamId id) 
+                    (Version 0s)
+                    (Update(item.Fields))
             | _ ->
                 envelopWithDefaults 
-                    (this.User.Identity.GetUserId()) 
-                    (System.Web.HttpContext.Current.Session.SessionID)
-                    (Guid.NewGuid()) (Guid.NewGuid())
-                    0s (Create(item.Fields))
+                    (UserId <| this.User.Identity.GetUserId()) 
+                    (DeviceId <| System.Web.HttpContext.Current.Session.SessionID)
+                    (TransId.create ()) 
+                    (StreamId.create ())
+                    (Version 0s)
+                    (Create(item.Fields))
 
         post envelope
         this.Request.CreateResponse(
@@ -49,10 +53,12 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit) =
     member this.Delete (item: DeleteActionItemRendition) =
         let envelope =
             envelopWithDefaults
-                (this.User.Identity.GetUserId())        
-                (System.Web.HttpContext.Current.Session.SessionID)
-                (Guid.NewGuid()) (Guid.Parse(item.ActionItemId))
-                0s (Delete)
+                (UserId <| this.User.Identity.GetUserId())        
+                (DeviceId <| System.Web.HttpContext.Current.Session.SessionID)
+                (TransId.create ()) 
+                (StreamId <| Guid.Parse(item.ActionItemId))
+                (Version 0s)
+                (Delete)
 
         post envelope
         this.Request.CreateResponse(
