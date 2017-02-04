@@ -11,7 +11,7 @@ open Actionable.Domain.Infrastructure.Envelope
 type AggregateAgent<'TState, 'TCommand, 'TEvent> =
     static member Create
         (eventSubject:IActorRef,
-         invalidCommandSubject:IActorRef,
+         invalidMessageSubject:IActorRef,
          uninitialized:'TState,
          store:IEventStore<Envelope<'TEvent>>, 
          buildState:'TState -> 'TEvent list -> 'TState,
@@ -26,7 +26,7 @@ type AggregateAgent<'TState, 'TCommand, 'TEvent> =
                 
             let version = 
                 if events |> List.isEmpty then 0s
-                else events |> List.last |> (fun e -> unbox e.Version)
+                else events |> List.last |> (fun e -> Version.unbox e.Version)
 
             // Build current state
             let state = buildState uninitialized (events |> List.map unpack)
@@ -39,16 +39,16 @@ type AggregateAgent<'TState, 'TCommand, 'TEvent> =
                 let envelope = 
                     envelopWithDefaults 
                         cmdenv.UserId 
-                        cmdenv.DeviceId 
+//                        cmdenv.DeviceId 
                         cmdenv.TransactionId 
                         cmdenv.StreamId 
-                        (Version (version + 1s)) 
+                        (Version.box (version + 1s)) 
                         nevent
                 mailbox.Self <!| store.AppendEventAsync cmdenv.StreamId envelope 
 
-                eventSubject.Tell <| Msg envelope
+                eventSubject <! Msg envelope
             with
-            | :? InvalidEvent as ex -> invalidCommandSubject <! Msg ex
-            | :? InvalidCommand as ex -> invalidCommandSubject <! Msg ex
+            | :? InvalidEvent as ex -> invalidMessageSubject <! Msg ex
+            | :? InvalidCommand as ex -> invalidMessageSubject <! Msg ex
         actorOf2 processMessage
 

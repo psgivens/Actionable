@@ -44,15 +44,6 @@ type ActionsControllerTests() =
         Assert.True true
         //((ActionableWebApi.ResponseToQuery)((System.Net.Http.ObjectContent<ActionableWebApi.ResponseToQuery>)result.Content).Value).Results[0].Fields
 
-
-// type AddActionItemRendition = {
-//    Id: string
-//    Title: string
-//    Description: string
-//    Status: string
-//    Fields: Map<string,string>
-//    Date : string }
-
     [<Fact>]
     member this.``Create an item, retrieve it, update it, and delete it`` () =
         let title = "Hibidy jibity"
@@ -74,13 +65,13 @@ type ActionsControllerTests() =
             Fields = [("actionable.title", title);("actionable.description","have the most fun")] |> Map.ofList
             Date = System.DateTimeOffset.Now.ToString ()
         }
-        System.Threading.Thread.Sleep 50000
+        System.Threading.Thread.Sleep 10000
         let result' = actionController.Get ()
         let response' = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result'
         let item' = response'.Results |> List.find (fun r -> r.Fields.["actionable.title"] = title)
         Assert.NotNull item'
-        Assert.True (item'.Id = ident)
-        Assert.True (item'.Fields.["actionable.description"]="have the most fun")
+        Assert.Equal (ident, item'.Id)
+        Assert.Equal ("have the most fun", item'.Fields.["actionable.description"])
         
         Assert.True true
 

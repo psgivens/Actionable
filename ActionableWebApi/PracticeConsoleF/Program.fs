@@ -5,8 +5,7 @@ open Akka
 open Akka.Actor
 open Akka.FSharp
 
-open Actionable.Actors
- 
+open Actionable.Actors 
 open Actionable.Actors.Composition
 
 type Greet (who:string) = 
@@ -19,9 +18,23 @@ type GreetingActor () as g =
             printfn "Hello %s" greet.Who)
 
 type ProcessorMessage = ProcessJob of int * int * int
-        
+
+open System
+type SStreamId = SStreamId of Guid with 
+    static member create () = SStreamId (Guid.NewGuid ())
+    static member unbox (SStreamId(aggregateId)) = aggregateId
+type SUserId = SUserId of String with 
+    static member unbox (SUserId(value)) = value
+
 [<EntryPoint>]
 let main argv = 
+    let guid = (System.Guid.NewGuid())
+    let v = SStreamId (guid)
+    let y = SStreamId.unbox v
+    let w = SUserId "foobar"
+    let z = SUserId.unbox w
+
+
     DoX ()
     let example = ActorExample ()
     example.run ()

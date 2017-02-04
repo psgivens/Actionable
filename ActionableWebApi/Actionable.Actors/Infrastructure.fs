@@ -3,14 +3,20 @@
 open Akka.Actor
 open Akka.FSharp
 
-type SubjectAction<'TMessage> =
-    | Msg of 'TMessage
+//type SubjectAction<'TMessage> =
+//    | Msg of 'TMessage
+//    | Subscribe of IActorRef
+//    | Unsubscribe of IActorRef
+
+type SubjectAction =
+    | Msg of System.Object
     | Subscribe of IActorRef
     | Unsubscribe of IActorRef
 
 let subject<'TMessage> system name = spawn system name (fun mailbox -> 
     let rec loop subscribers = actor {
-        let! (message:SubjectAction<'TMessage>) = mailbox.Receive ()
+//        let! (message:SubjectAction<'TMessage>) = mailbox.Receive ()
+        let! message = mailbox.Receive ()
         match message with 
         | Subscribe actor -> return! loop (actor::subscribers)
         | Unsubscribe actor -> return! loop (subscribers |> List.filter (fun item -> item <> actor))        

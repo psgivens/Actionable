@@ -15,32 +15,35 @@ open Actionable.Domain.ActionItemModule
 open Actionable.Domain.Infrastructure
 
 open Actionable.Domain.Persistance.EventSourcing.EF
+open System.Web.SessionState
             
 type ActionsController (post:Envelope<ActionItemCommand>->unit) =
     inherit ApiController ()
+    
     let (|GuidPattern|_|) guid = 
         match Guid.TryParse guid with 
         | (true, id) -> Some(id)
         | _ -> Option.None
+    interface IRequiresSessionState
     member this.Post (item: AddActionItemRendition) =
         // TODO Parse Int16.Parse(item.Status)
         let envelope = 
             match item.Id with 
             | GuidPattern id ->
                 envelopWithDefaults 
-                    (UserId <| this.User.Identity.GetUserId()) 
-                    (DeviceId <| System.Web.HttpContext.Current.Session.SessionID)
+                    (UserId.box <| this.User.Identity.GetUserId()) 
+//                    (DeviceId.box <| System.Web.HttpContext.Current.Session.SessionID)
                     (TransId.create ()) 
-                    (StreamId id) 
-                    (Version 0s)
+                    (StreamId.box id) 
+                    (Version.box 0s)
                     (Update(item.Fields))
             | _ ->
                 envelopWithDefaults 
-                    (UserId <| this.User.Identity.GetUserId()) 
-                    (DeviceId <| System.Web.HttpContext.Current.Session.SessionID)
+                    (UserId.box <| this.User.Identity.GetUserId()) 
+//                    (DeviceId.box <| System.Web.HttpContext.Current.Session.SessionID)
                     (TransId.create ()) 
                     (StreamId.create ())
-                    (Version 0s)
+                    (Version.box 0s)
                     (Create(item.Fields))
 
         post envelope
@@ -53,11 +56,11 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit) =
     member this.Delete (item: DeleteActionItemRendition) =
         let envelope =
             envelopWithDefaults
-                (UserId <| this.User.Identity.GetUserId())        
-                (DeviceId <| System.Web.HttpContext.Current.Session.SessionID)
+                (UserId.box <| this.User.Identity.GetUserId())        
+//                (DeviceId.box <| System.Web.HttpContext.Current.Session.SessionID)
                 (TransId.create ()) 
-                (StreamId <| Guid.Parse(item.ActionItemId))
-                (Version 0s)
+                (StreamId.box <| Guid.Parse(item.ActionItemId))
+                (Version.box 0s)
                 (Delete)
 
         post envelope

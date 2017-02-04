@@ -54,7 +54,7 @@ type AggregateAgent<'TType, 'TState, 'TCommand, 'TEvent>
                 
                     let version = 
                         if events |> List.isEmpty then 0s
-                        else events |> List.last |> (fun e -> unbox e.Version)
+                        else events |> List.last |> (fun e -> Version.unbox e.Version)
 
                     // Build current state
                     let state = buildState uninitialized (events |> List.map unpack)
@@ -66,10 +66,10 @@ type AggregateAgent<'TType, 'TState, 'TCommand, 'TEvent>
                     let envelope = 
                         envelopWithDefaults 
                             cmdenv.UserId 
-                            cmdenv.DeviceId 
+//                            cmdenv.DeviceId 
                             cmdenv.TransactionId 
                             cmdenv.StreamId 
-                            (Version(version + 1s)) 
+                            (Version.box (version + 1s)) 
                             nevent
                     do! store.AppendEventAsync cmdenv.StreamId envelope 
 
@@ -142,11 +142,11 @@ type PersistingAgent<'TType, 'TState, 'TCommand, 'TEvent>
 
                 // Get the CSP
                 let (cspMap', csp) = 
-                    match cspMap.TryFind <| unbox evtenv.StreamId with
+                    match cspMap.TryFind <| StreamId.unbox evtenv.StreamId with
                     | Option.Some (csp') -> (cspMap, csp')
                     | Option.None -> 
                         let csp' = createCsp ()
-                        (cspMap.Add (unbox evtenv.StreamId, csp'), csp')
+                        (cspMap.Add (StreamId.unbox evtenv.StreamId, csp'), csp')
 
                 // Post to it 
                 csp.Post evtenv

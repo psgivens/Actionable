@@ -72,7 +72,7 @@ type Startup () =
 
         let config = GlobalConfiguration.Configuration
 
-        let cors = new EnableCorsAttribute(origins= "http://localhost:8080, http://localhost:3001", headers= "*", methods= "*")
+        let cors = new EnableCorsAttribute(origins= "http://localhost:3001", headers= "*", methods= "*")
         app.UseCors (
             CorsOptions(
                 PolicyProvider = CorsPolicyProvider(

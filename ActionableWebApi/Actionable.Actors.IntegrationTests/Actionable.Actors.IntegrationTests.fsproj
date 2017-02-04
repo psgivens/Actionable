@@ -5,14 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>3912016d-4c00-41cb-803c-539a32e04b3e</ProjectGuid>
+    <ProjectGuid>08ec6cb5-401a-4a1d-b4e2-a34fb67bc438</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Actionable.Actors</RootNamespace>
-    <AssemblyName>Actionable.Actors</AssemblyName>
+    <RootNamespace>Actionable.Actors.IntegrationTests</RootNamespace>
+    <AssemblyName>Actionable.Actors.IntegrationTests</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>Actionable.Actors</Name>
+    <Name>Actionable.Actors.IntegrationTests</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\Actionable.Actors.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\Actionable.Actors.IntegrationTests.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,7 +31,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\Actionable.Actors.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Actionable.Actors.IntegrationTests.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -51,14 +51,9 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Library1.fs" />
-    <None Include="Script.fsx" />
+    <Compile Include="ActionsActorsTests.fs" />
+    <Content Include="App.config" />
     <Content Include="packages.config" />
-    <Compile Include="Infrastructure.fs" />
-    <Compile Include="Persistance.fs" />
-    <Compile Include="Aggregates.fs" />
-    <Compile Include="Initialization.fs" />
-    <Compile Include="Composition.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Akka">
@@ -69,6 +64,15 @@
       <HintPath>..\packages\Akka.FSharp.1.1.3\lib\net45\Akka.FSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FSharp.Core, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="FSharp.PowerPack">
       <HintPath>..\packages\FSPowerPack.Core.Community.3.0.0.0\lib\Net40\FSharp.PowerPack.dll</HintPath>
       <Private>True</Private>
@@ -82,9 +86,6 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
@@ -94,20 +95,32 @@
       <HintPath>..\packages\System.Collections.Immutable.1.1.36\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
+    <Reference Include="xunit.abstractions">
+      <HintPath>..\packages\xunit.abstractions.2.0.0\lib\net35\xunit.abstractions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.assert">
+      <HintPath>..\packages\xunit.assert.2.1.0\lib\dotnet\xunit.assert.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.core">
+      <HintPath>..\packages\xunit.extensibility.core.2.1.0\lib\dotnet\xunit.core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.execution.desktop">
+      <HintPath>..\packages\xunit.extensibility.execution.2.1.0\lib\net45\xunit.execution.desktop.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Actionable.Data\Actionable.Data.csproj">
-      <Name>Actionable.Data</Name>
-      <Project>{e6429031-5aeb-4e51-8831-d0cf2bca0c87}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Actionable.Domain.Persistance\Actionable.Domain.Persistance.fsproj">
-      <Name>Actionable.Domain.Persistance</Name>
-      <Project>{36fca430-7095-45de-baec-044068ee27f1}</Project>
+    <ProjectReference Include="..\Actionable.Actors\Actionable.Actors.fsproj">
+      <Name>Actionable.Actors</Name>
+      <Project>{3912016d-4c00-41cb-803c-539a32e04b3e}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\Actionable.Domain\Actionable.Domain.fsproj">

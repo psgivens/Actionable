@@ -54,3 +54,4 @@ let evolveState state event =
 
 let buildState =
     List.fold evolveState
+
