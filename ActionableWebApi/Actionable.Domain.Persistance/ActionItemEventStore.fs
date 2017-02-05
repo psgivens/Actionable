@@ -16,7 +16,6 @@ type Actionable.Data.ActionableDbContext with
                 {
                     Id = event.Id
                     UserId = UserId.box event.UserId
-//                    DeviceId = DeviceId.box event.DeviceId
                     StreamId = StreamId.box aggregateId
                     TransactionId = TransId.box event.TransactionId
                     Version = Version.box (event.Version)
@@ -167,7 +166,7 @@ let persistActionItem (UserId.Val(userId)) (StreamId.Id (streamId)) state =
 
 type ActionItemReadModel = {
     Fields: Map<string,string>
-    Id: string
+    Id: System.Guid
     UserId: string
     }
 
@@ -180,7 +179,7 @@ let mapToActionItemReadModel (task:TaskTypeInstance) =
             |> Seq.toList) @ (task.IntFields |> Seq.map (fun f -> 
                 f.FieldDefinition.FullyQualifiedName, f.Value.ToString())
             |> Seq.toList) |> Map.ofList
-        Id = task.Id.ToString() 
+        Id = task.Id
         UserId = task.UserIdentity }
 
 let fetchActionItems userId = 

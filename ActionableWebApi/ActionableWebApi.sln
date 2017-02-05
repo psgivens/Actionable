@@ -21,6 +21,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Actionable.Actors", "Action
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Actionable.Actors.IntegrationTests", "Actionable.Actors.IntegrationTests\Actionable.Actors.IntegrationTests.fsproj", "{08EC6CB5-401A-4A1D-B4E2-A34FB67BC438}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Actionable.Agents", "Actionable.Agents\Actionable.Agents.fsproj", "{3DD252D9-E4F5-4B44-B657-EFCD64228FAF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{08EC6CB5-401A-4A1D-B4E2-A34FB67BC438}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{08EC6CB5-401A-4A1D-B4E2-A34FB67BC438}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{08EC6CB5-401A-4A1D-B4E2-A34FB67BC438}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DD252D9-E4F5-4B44-B657-EFCD64228FAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DD252D9-E4F5-4B44-B657-EFCD64228FAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DD252D9-E4F5-4B44-B657-EFCD64228FAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DD252D9-E4F5-4B44-B657-EFCD64228FAF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

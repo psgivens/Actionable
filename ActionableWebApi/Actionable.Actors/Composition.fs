@@ -25,7 +25,6 @@ let DoX () =
     actionItemAggregateActor <!
         envelopWithDefaults 
             (UserId.box <| "")
-//            (DeviceId.box "devid")
             (TransId.create ()) 
             (StreamId.create ()) 
             (Version.box 0s) 

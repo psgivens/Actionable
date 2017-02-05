@@ -1,4 +1,5 @@
 ﻿namespace ActionableWebApi.IntegrationTests
+
 open Xunit
 open ActionableWebApi
 open System.Web.Http.Dispatcher
@@ -46,7 +47,7 @@ type ActionsControllerTests() =
 
     [<Fact>]
     member this.``Create an item, retrieve it, update it, and delete it`` () =
-        let title = "Hibidy jibity"
+        let title = "Hibidy jibity " + (System.Guid.NewGuid ()).ToString()
         let description = "have fun"
         let description' = "have the most fun"
         ignore <| actionController.Post {
@@ -54,7 +55,7 @@ type ActionsControllerTests() =
             Fields = [("actionable.title", title);("actionable.description",description)] |> Map.ofList
             Date = System.DateTimeOffset.Now.ToString ()
         }
-        System.Threading.Thread.Sleep 10000
+        System.Threading.Thread.Sleep 20000
         let result = actionController.Get ()
         let response = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result
         match response.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
@@ -65,14 +66,14 @@ type ActionsControllerTests() =
                 Assert.True (item.Fields.["actionable.description"] = description)
         
                 ignore <| actionController.Post {
-                    Id = item.Id
+                    Id = item.Id.ToString ()
                     Fields = 
                         [("actionable.title", title);("actionable.description",description')] 
                         |> Map.ofList
                     Date = System.DateTimeOffset.Now.ToString ()
                 } 
 
-                System.Threading.Thread.Sleep 10000
+                System.Threading.Thread.Sleep 20000
                 let result' = actionController.Get ()
                 let response' = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result'
                 match response'.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)

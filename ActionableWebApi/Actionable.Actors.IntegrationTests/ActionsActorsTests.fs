@@ -20,7 +20,6 @@ let ``Simple first test`` () =
     actionItemAggregateActor <!
         envelopWithDefaults 
             (UserId.box "")
-//            (DeviceId.box "devid")
             (TransId.create ()) 
             (StreamId.create ()) 
             (Version.box 0s) 
@@ -43,7 +42,7 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
     use signal = new System.Threading.AutoResetEvent false
     let waiter = spawn system "testsignalwaiter" <| actorOf (fun msg ->
         signal.Set () |> ignore)
-    actionItemEventListener <! Subscribe waiter
+    actionItemPersisterListener <! Subscribe waiter
 
     let title = "Hoobada Da Jubada Jistaliee"
     let description = "hiplity fublin"
@@ -52,7 +51,6 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
     actionItemAggregateActor 
     <! envelopWithDefaults 
         (UserId.box "sampleuserid")
-//        (DeviceId.box "sampledeviceid")
         (TransId.create ())
         (streamId) 
         (Version.box 0s) 
@@ -60,12 +58,12 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
             <| (["actionable.title",title;
                  "actionable.description", description] |> Map.ofList))
 
-    System.TimeSpan.FromSeconds 10.0 
+    System.TimeSpan.FromSeconds 60.0 
     |> signal.WaitOne 
     |> Assert.True
 
     let results = Actionable.Domain.Persistance.EventSourcing.EF.fetchActionItems "sampleuserid"
-    match results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
+    match results |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
         with
             | None -> failwith <| sprintf "item '%s' was not found" title
             | Some item -> 
@@ -75,19 +73,20 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
                 actionItemAggregateActor 
                 <! envelopWithDefaults 
                     (UserId.box "sampleuserid")
-            //        (DeviceId.box "sampledeviceid")
                     (TransId.create ())
                     (streamId) 
                     (Version.box 1s) 
                     (ActionItemCommand.Update 
                         <| (["actionable.title",title;
                              "actionable.description", description'] |> Map.ofList))
-
-                System.Threading.Thread.Sleep 10000
+                                         
+                System.TimeSpan.FromSeconds 60.0 
+                |> signal.WaitOne 
+                |> Assert.True
 
                 let results' = Actionable.Domain.Persistance.EventSourcing.EF.fetchActionItems "sampleuserid"
 
-                match results' |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
+                match results' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
                     with
                     | None -> failwith "Could not find item"
                     | Some (item') -> 

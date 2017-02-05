@@ -14,7 +14,6 @@ type FsType<'T> = Val of 'T with
 type StreamId = FsGuidType
 type TransId = FsGuidType
 type UserId = FsType<string>
-//type DeviceId = FsType<string>
 type Version = FsType<int16>
 
 type IEventStore<'T> = 
@@ -29,7 +28,6 @@ module Envelope =
     type Envelope<'T> = {
         Id: Guid
         UserId: UserId
-//        DeviceId: DeviceId
         StreamId: StreamId
         TransactionId: TransId
         Version: Version
@@ -39,7 +37,6 @@ module Envelope =
 
     let envelope 
             userId 
-//            deviceId 
             transId 
             id 
             version 
@@ -48,7 +45,6 @@ module Envelope =
             streamId = {
         Id = id
         UserId = userId
-//        DeviceId = deviceId
         StreamId = streamId
         Version = version
         Created = created
@@ -58,14 +54,12 @@ module Envelope =
 
     let envelopWithDefaults 
             (userId:UserId) 
-//            (deviceId:DeviceId) 
             (transId:TransId) 
             (streamId:StreamId) 
             (version:Version) item =
         streamId 
         |> envelope 
             userId 
-//            deviceId 
             transId 
             (Guid.NewGuid()) 
             version 
@@ -75,7 +69,6 @@ module Envelope =
     let repackage<'a,'b> (func:'a->'b) (envelope:Envelope<'a>) ={
         Id = envelope.Id
         UserId = envelope.UserId
-//        DeviceId = envelope.DeviceId
         StreamId = envelope.StreamId
         Version = envelope.Version
         Created = envelope.Created

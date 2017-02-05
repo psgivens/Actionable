@@ -230,6 +230,11 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Actionable.Agents\Actionable.Agents.fsproj">
+      <Name>Actionable.Agents</Name>
+      <Project>{3dd252d9-e4f5-4b44-b657-efcd64228faf}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Actionable.Data\Actionable.Data.csproj">
       <Name>Actionable.Data</Name>
       <Project>{e6429031-5aeb-4e51-8831-d0cf2bca0c87}</Project>

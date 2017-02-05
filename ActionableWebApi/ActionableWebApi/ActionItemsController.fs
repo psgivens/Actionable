@@ -17,7 +17,7 @@ open Actionable.Domain.Infrastructure
 open Actionable.Domain.Persistance.EventSourcing.EF
 open System.Web.SessionState
             
-type ActionsController (post:Envelope<ActionItemCommand>->unit) =
+type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItems:string->ActionItemReadModel list) =
     inherit ApiController ()
     
     let (|GuidPattern|_|) guid = 
@@ -32,7 +32,6 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit) =
             | GuidPattern id ->
                 envelopWithDefaults 
                     (UserId.box <| this.User.Identity.GetUserId()) 
-//                    (DeviceId.box <| System.Web.HttpContext.Current.Session.SessionID)
                     (TransId.create ()) 
                     (StreamId.box id) 
                     (Version.box 0s)
@@ -40,7 +39,6 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit) =
             | _ ->
                 envelopWithDefaults 
                     (UserId.box <| this.User.Identity.GetUserId()) 
-//                    (DeviceId.box <| System.Web.HttpContext.Current.Session.SessionID)
                     (TransId.create ()) 
                     (StreamId.create ())
                     (Version.box 0s)
@@ -57,7 +55,6 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit) =
         let envelope =
             envelopWithDefaults
                 (UserId.box <| this.User.Identity.GetUserId())        
-//                (DeviceId.box <| System.Web.HttpContext.Current.Session.SessionID)
                 (TransId.create ()) 
                 (StreamId.box <| Guid.Parse(item.ActionItemId))
                 (Version.box 0s)

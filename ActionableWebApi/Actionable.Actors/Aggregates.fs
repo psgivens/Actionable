@@ -39,7 +39,6 @@ type AggregateAgent<'TState, 'TCommand, 'TEvent> =
                 let envelope = 
                     envelopWithDefaults 
                         cmdenv.UserId 
-//                        cmdenv.DeviceId 
                         cmdenv.TransactionId 
                         cmdenv.StreamId 
                         (Version.box (version + 1s)) 

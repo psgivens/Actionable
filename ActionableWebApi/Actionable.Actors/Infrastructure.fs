@@ -3,11 +3,6 @@
 open Akka.Actor
 open Akka.FSharp
 
-//type SubjectAction<'TMessage> =
-//    | Msg of 'TMessage
-//    | Subscribe of IActorRef
-//    | Unsubscribe of IActorRef
-
 type SubjectAction =
     | Msg of System.Object
     | Subscribe of IActorRef

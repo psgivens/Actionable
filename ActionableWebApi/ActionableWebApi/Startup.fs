@@ -1,5 +1,7 @@
 namespace ActionableWebApi
 
+open Actionable.Agents.Composition
+
 open Owin
  
 open System
