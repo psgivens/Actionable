@@ -72,26 +72,9 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit) =
 
 
     member this.Get () =
-        let first f queryable =     
-            System.Linq.Queryable.First (queryable, f)
-        use context = new ActionableDbContext ()
-        let t = 
-            query {
-                for typ in context.TaskTypeDefinitions do
-                where (typ.FullyQualifiedName = "actionable.actionitem")
-                select typ
-                exactlyOne
-            }
-        let userId = this.User.Identity.GetUserId()
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             ResponseToQuery (
-                Results = (
-                    query {
-                        for actionItem in context.TaskInstances do
-                        where (actionItem.TaskTypeDefinitionId = 1 && actionItem.UserIdentity = userId)
-                        select actionItem }
-                    |> Seq.map mapToActionItemReadModel
-                    |> Seq.toList),
+                Results = fetchActionItems (this.User.Identity.GetUserId()),
                 Time = DateTimeOffset.Now.ToString("o")))
        

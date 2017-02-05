@@ -15,13 +15,11 @@ namespace Actionable.Data
         }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder) {
-            modelBuilder.Entity<ActionItemEntity>().ToTable("ActionItems");
             modelBuilder.Entity<ActionItemEnvelopeEntity>().ToTable("ActionItemEvents");
             modelBuilder.Entity<NotificationEnvelope>().ToTable("NotificationEvents");
             base.OnModelCreating(modelBuilder);
         }
 
-        public virtual DbSet<ActionItemEntity> ActionItems { get; set; }
         public virtual DbSet<ActionItemEnvelopeEntity> ActionItemEvents { get; set; }
         public virtual DbSet<NotificationEnvelope> NotificationEvents { get; set; }
         public virtual DbSet<TaskTypeDefinition> TaskTypeDefinitions { get; set; }

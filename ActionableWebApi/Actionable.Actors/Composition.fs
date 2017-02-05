@@ -11,6 +11,8 @@ open Actionable.Actors.Initialization
 open Actionable.Domain.ActionItemModule
 open Actionable.Domain.Infrastructure
 
+NewtonsoftHack.resolveNewtonsoft ()
+
 let debugger = spawn system "debugger" <| actorOf (fun msg ->
     printfn "Message: %A" msg)
 

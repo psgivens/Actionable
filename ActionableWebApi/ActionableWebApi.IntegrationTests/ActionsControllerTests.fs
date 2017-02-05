@@ -47,32 +47,44 @@ type ActionsControllerTests() =
     [<Fact>]
     member this.``Create an item, retrieve it, update it, and delete it`` () =
         let title = "Hibidy jibity"
-        let cresult' = actionController.Post {
+        let description = "have fun"
+        let description' = "have the most fun"
+        ignore <| actionController.Post {
             Id = ""
-            Fields = [("actionable.title", title);("actionable.description","have fun")] |> Map.ofList
+            Fields = [("actionable.title", title);("actionable.description",description)] |> Map.ofList
             Date = System.DateTimeOffset.Now.ToString ()
         }
         System.Threading.Thread.Sleep 10000
         let result = actionController.Get ()
         let response = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result
-        let item = response.Results |> List.find (fun r -> r.Fields.["actionable.title"] = title)
-        Assert.NotNull item
-        let ident = item.Id
-        Assert.True (item.Fields.["actionable.description"]="have fun")
+        match response.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
+            with
+            | None -> failwith <| sprintf "item '%s' was not found" title
+            | Some item -> 
+                let ident = item.Id
+                Assert.True (item.Fields.["actionable.description"] = description)
         
-        let cresult'' = actionController.Post {
-            Id = item.Id
-            Fields = [("actionable.title", title);("actionable.description","have the most fun")] |> Map.ofList
-            Date = System.DateTimeOffset.Now.ToString ()
-        }
-        System.Threading.Thread.Sleep 10000
-        let result' = actionController.Get ()
-        let response' = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result'
-        let item' = response'.Results |> List.find (fun r -> r.Fields.["actionable.title"] = title)
-        Assert.NotNull item'
-        Assert.Equal (ident, item'.Id)
-        Assert.Equal ("have the most fun", item'.Fields.["actionable.description"])
+                ignore <| actionController.Post {
+                    Id = item.Id
+                    Fields = 
+                        [("actionable.title", title);("actionable.description",description')] 
+                        |> Map.ofList
+                    Date = System.DateTimeOffset.Now.ToString ()
+                } 
+
+                System.Threading.Thread.Sleep 10000
+                let result' = actionController.Get ()
+                let response' = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result'
+                match response'.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
+                    with 
+                    | None -> failwith "Cannot find item"
+                    | Some item' ->
+                        Assert.Equal (ident, item'.Id)
+                        Assert.Equal (description', item'.Fields.["actionable.description"])
         
         Assert.True true
+
+
+
 
 

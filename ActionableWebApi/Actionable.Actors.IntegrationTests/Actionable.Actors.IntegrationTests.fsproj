@@ -123,6 +123,11 @@
       <Project>{3912016d-4c00-41cb-803c-539a32e04b3e}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Actionable.Domain.Persistance\Actionable.Domain.Persistance.fsproj">
+      <Name>Actionable.Domain.Persistance</Name>
+      <Project>{36fca430-7095-45de-baec-044068ee27f1}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Actionable.Domain\Actionable.Domain.fsproj">
       <Name>Actionable.Domain</Name>
       <Project>{ea8d095c-f810-4383-a666-b5360223e8a1}</Project>

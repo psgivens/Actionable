@@ -46,58 +46,36 @@ namespace Actionable.Data {
             taskType.Fields = fields;            
             context.TaskTypeDefinitions.Add(taskType);
 
-            // Create an instance
-            context.TaskInstances.Add(new TaskTypeInstance {
-                Id = Guid.NewGuid(),
-                TaskTypeDefinition = taskType,
-                UserIdentity = "dc85790d-2678-407b-800a-5690c0004497",
-                StringFields = new List<StringFieldInstance> {
-                    new StringFieldInstance {
-                        FieldDefinition = titleField,
-                        Value = "Do something important with your life"
-                    },
-                    new StringFieldInstance {
-                        FieldDefinition = descriptionField,
-                        Value = "Life is short, spend your time wisely"
-                    }
-                },
-                IntFields = new List<IntFieldInstance> {
-                    new IntFieldInstance {
-                        FieldDefinition = statusField,
-                        Value = 0
-                    }
-                },
-                DateFields = new List<DateTimeFieldInstance> {
-                    new DateTimeFieldInstance {
-                        FieldDefinition = createdDateField,
-                        Value = DateTimeOffset.Now,
-                    }
-                }
-            });
-
-            // Create an old school item 
-            context.ActionItems.Add(new ActionItemEntity {
-                Title = "Do something important",
-                Description = "Do something really important",
-                Status = 0,
-                UserIdentity = "dc85790d-2678-407b-800a-5690c0004497"
-            });
+            //// Create an instance
+            //context.TaskInstances.Add(new TaskTypeInstance {
+            //    Id = Guid.NewGuid(),
+            //    TaskTypeDefinition = taskType,
+            //    UserIdentity = "dc85790d-2678-407b-800a-5690c0004497",
+            //    StringFields = new List<StringFieldInstance> {
+            //        new StringFieldInstance {
+            //            FieldDefinition = titleField,
+            //            Value = "Do something important with your life"
+            //        },
+            //        new StringFieldInstance {
+            //            FieldDefinition = descriptionField,
+            //            Value = "Life is short, spend your time wisely"
+            //        }
+            //    },
+            //    IntFields = new List<IntFieldInstance> {
+            //        new IntFieldInstance {
+            //            FieldDefinition = statusField,
+            //            Value = 0
+            //        }
+            //    },
+            //    DateFields = new List<DateTimeFieldInstance> {
+            //        new DateTimeFieldInstance {
+            //            FieldDefinition = createdDateField,
+            //            Value = DateTimeOffset.Now,
+            //        }
+            //    }
+            //});
 
             base.Seed(context);
         }
     }
-    //public class SchoolDBInitializer : DropCreateDatabaseAlways<SchoolDBContext> {
-    //    protected override void Seed(SchoolDBContext context) {
-    //        IList<Standard> defaultStandards = new List<Standard>();
-
-    //        defaultStandards.Add(new Standard() { StandardName = "Standard 1", Description = "First Standard" });
-    //        defaultStandards.Add(new Standard() { StandardName = "Standard 2", Description = "Second Standard" });
-    //        defaultStandards.Add(new Standard() { StandardName = "Standard 3", Description = "Third Standard" });
-
-    //        foreach (Standard std in defaultStandards)
-    //            context.Standards.Add(std);
-
-    //        base.Seed(context);
-    //    }
-    //}
 }

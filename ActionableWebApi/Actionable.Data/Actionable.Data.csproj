@@ -52,7 +52,6 @@
   <ItemGroup>
     <Compile Include="ActionableDbContext.cs" />
     <Compile Include="ActionableDbInitializer.cs" />
-    <Compile Include="ActionItems.cs" />
     <Compile Include="EventSourcing.cs" />
     <Compile Include="MetaTypes\TypeDefinition.cs" />
     <Compile Include="MetaTypes\TypeInstance.cs" />

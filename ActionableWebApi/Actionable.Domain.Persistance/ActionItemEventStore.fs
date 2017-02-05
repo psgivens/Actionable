@@ -182,3 +182,22 @@ let mapToActionItemReadModel (task:TaskTypeInstance) =
             |> Seq.toList) |> Map.ofList
         Id = task.Id.ToString() 
         UserId = task.UserIdentity }
+
+let fetchActionItems userId = 
+    let first f queryable =     
+        System.Linq.Queryable.First (queryable, f)
+    use context = new ActionableDbContext ()
+    let t = 
+        query {
+            for typ in context.TaskTypeDefinitions do
+            where (typ.FullyQualifiedName = "actionable.actionitem")
+            select typ
+            exactlyOne
+        }
+
+    query {
+        for actionItem in context.TaskInstances do
+        where (actionItem.TaskTypeDefinitionId = 1 && actionItem.UserIdentity = userId)
+        select actionItem }
+    |> Seq.map mapToActionItemReadModel
+    |> Seq.toList
