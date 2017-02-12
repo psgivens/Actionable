@@ -9,14 +9,19 @@ open Actionable.Actors.Initialization
 open Actionable.Actors.Composition
 
 type MemoryStore () =
-    let mutable collection = System.Collections.Generic.List<Envelope<ActionItemEvent>>()
-    interface IEventStore<Envelope<ActionItemModule.ActionItemEvent>> with        
+    let mutable itemsMap = Map.empty<StreamId, Envelope<ActionItemEvent> list> 
+    interface IEventStore<Envelope<ActionItemModule.ActionItemEvent>> with                    
         member this.GetEvents (streamId:StreamId) =
-            collection |> List.ofSeq
+            match itemsMap |> Map.tryFind streamId with
+            | None -> []
+            | Some(events) -> events
         member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<ActionItemModule.ActionItemEvent>) =
             async { 
-                collection.Add(envelope);
-                do! Async.Sleep 2000
+                let items = 
+                    match itemsMap |> Map.tryFind streamId with
+                    | None -> [envelope]
+                    | Some(list) -> list@[envelope]
+                itemsMap <- itemsMap |> Map.add streamId items
                 do! async.Zero ()
             }
 

@@ -22,7 +22,7 @@ let actionable = composeSystem (system, MemoryStore (), persist) // Actionable.D
 [<Fact>]
 let ``Simple first test`` () =
 //    DoX ()
-    actionable.actionItemAggregateActor <!
+    actionable.actionItemAggregateProcessor <!
         envelopWithDefaults 
             (UserId.box "")
             (TransId.create ()) 
@@ -47,13 +47,13 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
     use signal = new System.Threading.AutoResetEvent false
     let waiter = spawn system "testsignalwaiter" <| actorOf (fun msg ->
         signal.Set () |> ignore)
-    actionable.actionItemPersisterListener <! Subscribe waiter
+    actionable.actionItemPersisterEventBroadcaster <! Subscribe waiter
 
     let title = "Hoobada Da Jubada Jistaliee"
     let description = "hiplity fublin"
     let description' = "hiplity dw mitibly fublin"
     let streamId = StreamId.create ()
-    actionable.actionItemAggregateActor 
+    actionable.actionItemAggregateProcessor 
     <! envelopWithDefaults 
         (UserId.box "sampleuserid")
         (TransId.create ())
@@ -75,7 +75,7 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
                 let ident = item.Id
                 Assert.True (item.Fields.["actionable.description"] = description)
 
-                actionable.actionItemAggregateActor 
+                actionable.actionItemAggregateProcessor 
                 <! envelopWithDefaults 
                     (UserId.box "sampleuserid")
                     (TransId.create ())

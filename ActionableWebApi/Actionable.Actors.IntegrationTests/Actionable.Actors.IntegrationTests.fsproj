@@ -56,6 +56,7 @@
     <Content Include="App.config" />
     <Content Include="packages.config" />
     <None Include="References.fsx" />
+    <None Include="ScriptSetup.fsx" />
     <None Include="Practice.fsx" />
   </ItemGroup>
   <ItemGroup>

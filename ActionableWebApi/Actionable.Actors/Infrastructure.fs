@@ -10,11 +10,21 @@ type SubjectAction =
 
 let subject<'TMessage> system name = spawn system name (fun mailbox -> 
     let rec loop subscribers = actor {
-//        let! (message:SubjectAction<'TMessage>) = mailbox.Receive ()
         let! message = mailbox.Receive ()
         match message with 
-        | Subscribe actor -> return! loop (actor::subscribers)
-        | Unsubscribe actor -> return! loop (subscribers |> List.filter (fun item -> item <> actor))        
+        | Subscribe actor -> 
+            return! loop 
+                <|  match subscribers 
+                        |> List.tryFind (fun (a:IActorRef) -> 
+                            actor.Path = a.Path) 
+                        with
+                    | None -> actor::subscribers
+                    | Some(_) -> subscribers
+        | Unsubscribe actor -> 
+            return! loop 
+                (subscribers 
+                 |> List.filter (fun item -> 
+                    item <> actor))        
         | Msg msg -> 
             subscribers |> List.iter (fun actor -> actor.Tell msg)
             return! loop subscribers

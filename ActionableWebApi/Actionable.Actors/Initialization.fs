@@ -16,44 +16,36 @@ type ActionableActors (system:Akka.Actor.ActorSystem, store:IEventStore<Envelope
     do actors.StartPersister () 
     do actors.StartAggregator ()
 
-    [<DefaultValue>] val mutable actionItemPersisterListener: IActorRef
-    [<DefaultValue>] val mutable actionItemPrsisterErrorListener :IActorRef
-    [<DefaultValue>] val mutable actionItemPersistanceActor :IActorRef
-    [<DefaultValue>] val mutable actionItemEventListener :IActorRef
-    [<DefaultValue>] val mutable invalidActionItemMessageListener :IActorRef
-    [<DefaultValue>] val mutable actionItemAggregateActor :IActorRef
+    [<DefaultValue>] val mutable actionItemPersisterEventBroadcaster: IActorRef
+    [<DefaultValue>] val mutable actionItemPersisterErrorBroadcaster :IActorRef
+    [<DefaultValue>] val mutable actionItemPersistanceProcessor :IActorRef
+    [<DefaultValue>] val mutable actionItemEventBroadcaster :IActorRef
+    [<DefaultValue>] val mutable actionItemErrorBroadcaster :IActorRef
+    [<DefaultValue>] val mutable actionItemAggregateProcessor :IActorRef
     
     member this.StartPersister () = 
-        this.actionItemPersisterListener <- subject system "actionItemPersisterListener" 
-        this.actionItemPrsisterErrorListener <- subject system "actionItemPrsisterErrorListener"
-        this.actionItemPersistanceActor <-
+        this.actionItemPersisterEventBroadcaster <- subject system "actionItemPersisterEventBroadcaster" 
+        this.actionItemPersisterErrorBroadcaster <- subject system "actionItemPersisterErrorBroadcaster"
+        this.actionItemPersistanceProcessor <-
             PersistingActor<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
-                this.actionItemPersisterListener,
-                this.actionItemPrsisterErrorListener,
+                this.actionItemPersisterEventBroadcaster,
+                this.actionItemPersisterErrorBroadcaster,
                 ActionItemState.DoesNotExist,
                 store,
                 buildState,
                 persist)
-            |> spawn system "actionItemPersistanceActor"
+            |> spawn system "actionItemPersistanceProcessor"
 
     member this.StartAggregator () = 
-        this.actionItemEventListener <- subject system "actionItemEventListener" 
-        this.invalidActionItemMessageListener <- subject system "invalidActionItemMessageListener"
-        this.actionItemAggregateActor <- 
+        this.actionItemEventBroadcaster <- subject system "actionItemEventBroadcaster" 
+        this.actionItemErrorBroadcaster <- subject system "actionItemErrorBroadcaster"
+        this.actionItemAggregateProcessor <- 
             AggregateAgent<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
-                this.actionItemEventListener,
-                this.invalidActionItemMessageListener,
+                this.actionItemEventBroadcaster,
+                this.actionItemErrorBroadcaster,
                 ActionItemState.DoesNotExist,
                 store,
                 buildState, 
                 handle)
-            |> spawn system "actionItemAggregateActor"
-
-//    member this.ActionItemPersisterListener      = this.actionItemPersisterListener 
-//    member this.ActionItemPrsisterErrorListener  = this.actionItemPrsisterErrorListener 
-//    member this.ActionItemPersistanceActor       = this.actionItemPersistanceActor 
-//    member this.ActionItemEventListener          = this.actionItemEventListener 
-//    member this.InvalidActionItemMessageListener = this.invalidActionItemMessageListener
-//    member this.ActionItemAggregateActor         = this.actionItemAggregateActor  
-
-
+            |> spawn system "actionItemAggregateProcessor"
+    
