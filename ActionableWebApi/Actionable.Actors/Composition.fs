@@ -13,13 +13,13 @@ open Actionable.Domain.Infrastructure
 
 NewtonsoftHack.resolveNewtonsoft ()
 
-let debugger = spawn system "debugger" <| actorOf (fun msg ->
-    printfn "Message: %A" msg)
 
-let composeSystem (store:IEventStore<Envelope<Actionable.Domain.ActionItemModule.ActionItemEvent>>, persist:UserId -> StreamId -> ActionItemState -> Async<unit>) =
-    let actionable = ActionableActors (store, persist)
-    actionable.ActionItemEventListener <! Subscribe debugger
-    actionable.ActionItemEventListener <! Subscribe actionable.ActionItemPersistanceActor
+let composeSystem (system:Akka.Actor.ActorSystem, store:IEventStore<Envelope<Actionable.Domain.ActionItemModule.ActionItemEvent>>, persist:UserId -> StreamId -> ActionItemState -> Async<unit>) =
+//    let debugger = spawn system "debugger" <| actorOf (fun msg ->
+//        printfn "Message: %A" msg)
+    let actionable = ActionableActors (system, store, persist)
+//    actionable.actionItemEventListener <! Subscribe debugger
+    actionable.actionItemEventListener <! Subscribe actionable.actionItemPersistanceActor
     actionable
 
 //// TODO: Remove this sample method

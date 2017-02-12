@@ -16,12 +16,13 @@ open Actionable.Actors.Composition
 
 open InMemoryPersistance
 
-let actionable = composeSystem (MemoryStore (), persist) // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
+let system = Configuration.defaultConfig () |> System.create "ActionableSystem"
+let actionable = composeSystem (system, MemoryStore (), persist) // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
 
 [<Fact>]
 let ``Simple first test`` () =
 //    DoX ()
-    actionable.ActionItemAggregateActor <!
+    actionable.actionItemAggregateActor <!
         envelopWithDefaults 
             (UserId.box "")
             (TransId.create ()) 
@@ -46,13 +47,13 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
     use signal = new System.Threading.AutoResetEvent false
     let waiter = spawn system "testsignalwaiter" <| actorOf (fun msg ->
         signal.Set () |> ignore)
-    actionable.ActionItemPersisterListener <! Subscribe waiter
+    actionable.actionItemPersisterListener <! Subscribe waiter
 
     let title = "Hoobada Da Jubada Jistaliee"
     let description = "hiplity fublin"
     let description' = "hiplity dw mitibly fublin"
     let streamId = StreamId.create ()
-    actionable.ActionItemAggregateActor 
+    actionable.actionItemAggregateActor 
     <! envelopWithDefaults 
         (UserId.box "sampleuserid")
         (TransId.create ())
@@ -74,7 +75,7 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
                 let ident = item.Id
                 Assert.True (item.Fields.["actionable.description"] = description)
 
-                actionable.ActionItemAggregateActor 
+                actionable.actionItemAggregateActor 
                 <! envelopWithDefaults 
                     (UserId.box "sampleuserid")
                     (TransId.create ())
