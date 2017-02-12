@@ -15,7 +15,7 @@ type AggregateAgent<'TState, 'TCommand, 'TEvent> =
          uninitialized:'TState,
          store:IEventStore<Envelope<'TEvent>>, 
          buildState:'TState -> 'TEvent list -> 'TState,
-         handle:'TState*'TCommand -> 'TEvent) =         
+         handle:'TState -> 'TCommand -> 'TEvent) =         
     
         let processMessage (mailbox:Actor<Envelope<'TCommand>>) cmdenv=
             let events = 
@@ -33,7 +33,7 @@ type AggregateAgent<'TState, 'TCommand, 'TEvent> =
             
             try
                 // 'handle' current cmd
-                let nevent = handle (state, cmdenv.Item)
+                let nevent = handle state cmdenv.Item
 
                 // publish new event
                 let envelope = 
@@ -43,9 +43,11 @@ type AggregateAgent<'TState, 'TCommand, 'TEvent> =
                         cmdenv.StreamId 
                         (Version.box (version + 1s)) 
                         nevent
-                mailbox.Self <!| store.AppendEventAsync cmdenv.StreamId envelope 
 
-                eventSubject <! Msg envelope
+                async {
+                        do! store.AppendEventAsync cmdenv.StreamId envelope 
+                        return Msg envelope
+                } |!> eventSubject
             with
             | :? InvalidEvent as ex -> invalidMessageSubject <! Msg ex
             | :? InvalidCommand as ex -> invalidMessageSubject <! Msg ex

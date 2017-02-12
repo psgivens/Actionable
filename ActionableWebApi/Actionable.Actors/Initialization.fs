@@ -16,28 +16,35 @@ let subject<'TMessage> name =
 open Actionable.Domain.ActionItemModule
 open Actionable.Domain.Infrastructure
 
-let actionItemPersisterListener = subject<Envelope<ActionItemEvent>> "actionItemPersisterListener" 
-let actionItemPrsisterErrorListener = subject<System.Exception> "actionItemPrsisterErrorListener"
-let actionItemPersistanceActor = 
-    PersistingAgent<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
-        actionItemPersisterListener,
-        actionItemPrsisterErrorListener,
-        ActionItemState.DoesNotExist,
-        Actionable.Domain.Persistance.EventSourcing.EF.GenericEventStore(), 
-        buildState, 
-        Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
-    |> spawn system "actionItemPersistanceActor"
+type ActionableActors (store:IEventStore<Envelope<Actionable.Domain.ActionItemModule.ActionItemEvent>>, persist:UserId -> StreamId -> ActionItemState -> Async<unit>) =
+    let actionItemPersisterListener = subject<Envelope<ActionItemEvent>> "actionItemPersisterListener" 
+    let actionItemPrsisterErrorListener = subject<System.Exception> "actionItemPrsisterErrorListener"
+    let actionItemPersistanceActor = 
+        PersistingActor<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
+            actionItemPersisterListener,
+            actionItemPrsisterErrorListener,
+            ActionItemState.DoesNotExist,
+            store,
+            buildState,
+            persist)
+        |> spawn system "actionItemPersistanceActor"
 
-let actionItemEventListener = subject<Envelope<ActionItemEvent>> "actionItemEventListener" 
-let invalidActionItemMessageListener = subject<System.Exception> "invalidActionItemMessageListener"
-let actionItemAggregateActor = 
-    AggregateAgent<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
-        actionItemEventListener,
-        invalidActionItemMessageListener,
-        ActionItemState.DoesNotExist,
-        Actionable.Domain.Persistance.EventSourcing.EF.GenericEventStore(), 
-        buildState, 
-        handle)
-    |> spawn system "actionItemAggregateActor"
+    let actionItemEventListener = subject<Envelope<ActionItemEvent>> "actionItemEventListener" 
+    let invalidActionItemMessageListener = subject<System.Exception> "invalidActionItemMessageListener"
+    let actionItemAggregateActor = 
+        AggregateAgent<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
+            actionItemEventListener,
+            invalidActionItemMessageListener,
+            ActionItemState.DoesNotExist,
+            store,
+            buildState, 
+            handle)
+        |> spawn system "actionItemAggregateActor"
+    member this.ActionItemPersisterListener      = actionItemPersisterListener 
+    member this.ActionItemPrsisterErrorListener  = actionItemPrsisterErrorListener 
+    member this.ActionItemPersistanceActor       = actionItemPersistanceActor 
+    member this.ActionItemEventListener          = actionItemEventListener 
+    member this.InvalidActionItemMessageListener = invalidActionItemMessageListener
+    member this.ActionItemAggregateActor         = actionItemAggregateActor  
 
 

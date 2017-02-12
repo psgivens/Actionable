@@ -51,9 +51,12 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="InMemoryPersistance.fs" />
     <Compile Include="ActionsActorsTests.fs" />
     <Content Include="App.config" />
     <Content Include="packages.config" />
+    <None Include="References.fsx" />
+    <None Include="Practice.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Akka">
@@ -116,11 +119,14 @@
       <HintPath>..\packages\xunit.extensibility.execution.2.1.0\lib\net45\xunit.execution.desktop.dll</HintPath>
       <Private>True</Private>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Actionable.Actors\Actionable.Actors.fsproj">
       <Name>Actionable.Actors</Name>
       <Project>{3912016d-4c00-41cb-803c-539a32e04b3e}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Actionable.Data\Actionable.Data.csproj">
+      <Name>Actionable.Data</Name>
+      <Project>{e6429031-5aeb-4e51-8831-d0cf2bca0c87}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\Actionable.Domain.Persistance\Actionable.Domain.Persistance.fsproj">

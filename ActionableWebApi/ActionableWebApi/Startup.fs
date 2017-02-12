@@ -64,7 +64,7 @@ type Startup () =
         ()
 
     let configureServices (config:HttpConfiguration) =
-        config.Services.Replace(
+         config.Services.Replace(
             typeof<System.Web.Http.Dispatcher.IHttpControllerActivator>,
             CompositRoot())
 

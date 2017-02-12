@@ -7,17 +7,21 @@ open Akka.Actor
 open Akka.FSharp
 
 open Actionable.Domain.Infrastructure
-//open Actionable.Domain
+open Actionable.Domain
 open Actionable.Domain.ActionItemModule
 
 open Actionable.Actors 
 open Actionable.Actors.Initialization
 open Actionable.Actors.Composition
 
+open InMemoryPersistance
+
+let actionable = composeSystem (MemoryStore (), persist) // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
+
 [<Fact>]
 let ``Simple first test`` () =
-    DoX ()
-    actionItemAggregateActor <!
+//    DoX ()
+    actionable.ActionItemAggregateActor <!
         envelopWithDefaults 
             (UserId.box "")
             (TransId.create ()) 
@@ -36,19 +40,19 @@ open Actionable.Actors.Infrastructure
 [<Fact>]
 let ``Create an item, retrieve it, update it, and delete it`` () =
 
-    composeSystem ()
+//    composeSystem ()
 
     // TODO: make the signal waiter more generic
     use signal = new System.Threading.AutoResetEvent false
     let waiter = spawn system "testsignalwaiter" <| actorOf (fun msg ->
         signal.Set () |> ignore)
-    actionItemPersisterListener <! Subscribe waiter
+    actionable.ActionItemPersisterListener <! Subscribe waiter
 
     let title = "Hoobada Da Jubada Jistaliee"
     let description = "hiplity fublin"
     let description' = "hiplity dw mitibly fublin"
     let streamId = StreamId.create ()
-    actionItemAggregateActor 
+    actionable.ActionItemAggregateActor 
     <! envelopWithDefaults 
         (UserId.box "sampleuserid")
         (TransId.create ())
@@ -62,7 +66,7 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
     |> signal.WaitOne 
     |> Assert.True
 
-    let results = Actionable.Domain.Persistance.EventSourcing.EF.fetchActionItems "sampleuserid"
+    let results = fetch "sampleuserid"
     match results |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
         with
             | None -> failwith <| sprintf "item '%s' was not found" title
@@ -70,7 +74,7 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
                 let ident = item.Id
                 Assert.True (item.Fields.["actionable.description"] = description)
 
-                actionItemAggregateActor 
+                actionable.ActionItemAggregateActor 
                 <! envelopWithDefaults 
                     (UserId.box "sampleuserid")
                     (TransId.create ())
@@ -84,7 +88,7 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
                 |> signal.WaitOne 
                 |> Assert.True
 
-                let results' = Actionable.Domain.Persistance.EventSourcing.EF.fetchActionItems "sampleuserid"
+                let results' = fetch "sampleuserid"
 
                 match results' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
                     with

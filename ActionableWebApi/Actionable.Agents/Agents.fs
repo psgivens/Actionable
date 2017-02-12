@@ -25,7 +25,7 @@ type AggregateAgent<'TType, 'TState, 'TCommand, 'TEvent>
         (uninitialized:'TState,
          store:IEventStore<Envelope<'TEvent>>, 
          buildState:'TState -> 'TEvent list -> 'TState,
-         handle:'TState*'TCommand -> 'TEvent) =
+         handle:'TState -> 'TCommand -> 'TEvent) =
          
     let eventSubject = new Subjects.Subject<Envelope<'TEvent>> ()
     let communicationAgent = new Agent<AgentCommunication<Envelope<'TEvent>>>(fun inbox ->
@@ -60,7 +60,7 @@ type AggregateAgent<'TType, 'TState, 'TCommand, 'TEvent>
                     let state = buildState uninitialized (events |> List.map unpack)
 
                     // 'handle' current cmd
-                    let nevent = handle (state, cmdenv.Item)
+                    let nevent = handle state cmdenv.Item
 
                     // publish new event
                     let envelope = 

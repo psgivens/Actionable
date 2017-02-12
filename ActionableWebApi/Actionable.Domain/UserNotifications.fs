@@ -21,7 +21,8 @@ type InvalidCommand (state:UserNotificationsState, command:UserNotificationsComm
 type InvalidEvent (state:UserNotificationsState, event:UserNotificationsEvent) =
     inherit System.Exception(sprintf "Invalid event.\n\event: %A\n\tstate: %A" event state)
 
-let handle = function    
+let handle state command =
+    match state, command with
     | DoesNotExist, AppendMessage (message) -> MessageAppended (1, {message=message; status=0}) 
     | State (notifications), AppendMessage (message) -> 
         let key = notifications.messages |> Map.toSeq |> Seq.map fst |> Seq.max 

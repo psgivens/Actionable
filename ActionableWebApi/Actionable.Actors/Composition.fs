@@ -16,19 +16,22 @@ NewtonsoftHack.resolveNewtonsoft ()
 let debugger = spawn system "debugger" <| actorOf (fun msg ->
     printfn "Message: %A" msg)
 
-let composeSystem () = 
-    actionItemEventListener <! Subscribe debugger
-    actionItemEventListener <! Subscribe actionItemPersistanceActor
+let composeSystem (store:IEventStore<Envelope<Actionable.Domain.ActionItemModule.ActionItemEvent>>, persist:UserId -> StreamId -> ActionItemState -> Async<unit>) =
+    let actionable = ActionableActors (store, persist)
+    actionable.ActionItemEventListener <! Subscribe debugger
+    actionable.ActionItemEventListener <! Subscribe actionable.ActionItemPersistanceActor
+    actionable
 
-// TODO: Remove this sample method
-let DoX () = 
-    actionItemAggregateActor <!
-        envelopWithDefaults 
-            (UserId.box <| "")
-            (TransId.create ()) 
-            (StreamId.create ()) 
-            (Version.box 0s) 
-            ActionItemCommand.Delete
-    printfn "done"
+//// TODO: Remove this sample method
+//let DoX () = 
+//    let actionable = composeSystem (Actionable.Domain.Persistance.EventSourcing.EF.GenericEventStore())
+//    actionable.actionItemAggregateActor <!
+//        envelopWithDefaults 
+//            (UserId.box <| "")
+//            (TransId.create ()) 
+//            (StreamId.create ()) 
+//            (Version.box 0s) 
+//            ActionItemCommand.Delete
+//    printfn "done"
 
 

@@ -109,7 +109,7 @@ let mapToFields'<'a when 'a :> FieldInstanceBase>
     (constructField:(FieldDefinition*string)->'a) = 
     System.Collections.Generic.List<'a>() |> mapFieldValuesToDefinitions fieldDefs fields fieldType constructField (fun x y -> ())
 
-let persistActionItem (UserId.Val(userId)) (StreamId.Id (streamId)) state = 
+let persistActionItem (UserId.Val(userId):UserId) (StreamId.Id (streamId):StreamId) state = 
     async {
         try
             use context = new ActionableDbContext ()

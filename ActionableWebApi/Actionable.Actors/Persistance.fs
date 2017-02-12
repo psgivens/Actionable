@@ -5,9 +5,8 @@ open Akka.FSharp
 
 open Actionable.Actors.Infrastructure
 open Actionable.Domain.Infrastructure
-open Actionable.Data
 
-type PersistingAgent<'TState, 'TCommand, 'TEvent> =
+type PersistingActor<'TState, 'TCommand, 'TEvent> =
     static member Create 
         (eventSubject:IActorRef,
          errorSubject:IActorRef,

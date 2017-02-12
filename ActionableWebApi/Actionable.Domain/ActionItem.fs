@@ -24,7 +24,8 @@ type InvalidCommand (state:ActionItemState, command:ActionItemCommand) =
 type InvalidEvent (state:ActionItemState, event: ActionItemEvent) =
     inherit System.Exception(sprintf "Invalid event.\n\event: %A\n\tstate: %A" event state)
 
-let handle = function    
+let handle state command = 
+    match state, command with
     | DoesNotExist, Create (fields) -> Created ({Fields=fields|>Map.add "actionable.status" "0"})
     | State(item), Update (fields) -> 
         // TODO: Verify that key/value make sense

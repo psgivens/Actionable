@@ -57,8 +57,8 @@
     <Compile Include="Infrastructure.fs" />
     <Compile Include="Persistance.fs" />
     <Compile Include="Aggregates.fs" />
-    <Compile Include="Initialization.fs" />
     <Compile Include="NewtonsoftHack.fs" />
+    <Compile Include="Initialization.fs" />
     <Compile Include="Composition.fs" />
   </ItemGroup>
   <ItemGroup>
@@ -101,11 +101,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Actionable.Data\Actionable.Data.csproj">
-      <Name>Actionable.Data</Name>
-      <Project>{e6429031-5aeb-4e51-8831-d0cf2bca0c87}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\Actionable.Domain.Persistance\Actionable.Domain.Persistance.fsproj">
       <Name>Actionable.Domain.Persistance</Name>
       <Project>{36fca430-7095-45de-baec-044068ee27f1}</Project>
