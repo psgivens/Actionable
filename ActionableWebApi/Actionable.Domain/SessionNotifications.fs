@@ -38,12 +38,15 @@ module Map =
 
 let evolveState state event =
     match state, event with
+    | DoesNotExist, MessageAppended (idx, notification) ->
+        State (
+            { messages = [(idx,notification)] |> Map.ofList 
+            })
     | State (notifications), MessageAppended (idx, notification) -> 
         State (
             { notifications with 
                 messages = notifications.messages |> Map.add idx notification 
-            }
-        )
+            })
     | State (notifications), MessageAcknowledged (idx) -> 
         let notification = notifications.messages |> Map.find idx
         State (
@@ -51,8 +54,7 @@ let evolveState state event =
                 messages = 
                     notifications.messages 
                     |> Map.add idx {message=notification.message; status=1}
-            }
-        )
+            })
     | s, e -> raise <| InvalidEvent (s,e)
 
 let buildState =

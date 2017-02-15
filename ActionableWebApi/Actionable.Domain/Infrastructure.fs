@@ -51,7 +51,7 @@ module Envelope =
         Item = item
         TransactionId = transId 
         }
-
+        
     let envelopWithDefaults 
             (userId:UserId) 
             (transId:TransId) 

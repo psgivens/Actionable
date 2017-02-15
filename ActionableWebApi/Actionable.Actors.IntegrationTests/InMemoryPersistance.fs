@@ -8,14 +8,14 @@ open Actionable.Actors
 open Actionable.Actors.Initialization
 open Actionable.Actors.Composition
 
-type MemoryStore () =
-    let mutable itemsMap = Map.empty<StreamId, Envelope<ActionItemEvent> list> 
-    interface IEventStore<Envelope<ActionItemModule.ActionItemEvent>> with                    
+type MemoryStore<'TEventType> () =
+    let mutable itemsMap = Map.empty<StreamId, Envelope<'TEventType> list> 
+    interface IEventStore<Envelope<'TEventType>> with                    
         member this.GetEvents (streamId:StreamId) =
             match itemsMap |> Map.tryFind streamId with
             | None -> []
             | Some(events) -> events
-        member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<ActionItemModule.ActionItemEvent>) =
+        member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<'TEventType>) =
             async { 
                 let items = 
                     match itemsMap |> Map.tryFind streamId with

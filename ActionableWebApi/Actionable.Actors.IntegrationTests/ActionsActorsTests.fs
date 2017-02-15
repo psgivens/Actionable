@@ -9,6 +9,7 @@ open Akka.FSharp
 open Actionable.Domain.Infrastructure
 open Actionable.Domain
 open Actionable.Domain.ActionItemModule
+open Actionable.Domain.SessionNotificationsModule
 
 open Actionable.Actors 
 open Actionable.Actors.Initialization
@@ -17,36 +18,28 @@ open Actionable.Actors.Composition
 open InMemoryPersistance
 
 let system = Configuration.defaultConfig () |> System.create "ActionableSystem"
-let actionable = composeSystem (system, MemoryStore (), persist) // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
-
-[<Fact>]
-let ``Simple first test`` () =
-//    DoX ()
-    actionable.actionItemAggregateProcessor <!
-        envelopWithDefaults 
-            (UserId.box "")
-            (TransId.create ()) 
-            (StreamId.create ()) 
-            (Version.box 0s) 
-            ActionItemCommand.Delete
-
-    System.Threading.Thread.Sleep 10000
-    printfn "done"
-    Assert.True true
-//    true |> should equal true
-
+let actionable = 
+    composeSystem 
+        (system, 
+         MemoryStore<ActionItemEvent> (), 
+         MemoryStore<SessionNotificationsEvent> (),
+         persist) // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
 
 open Actionable.Actors.Infrastructure
 
+let createWaiter name = 
+    use signal = new System.Threading.AutoResetEvent false    
+    let waitForsignal seconds =     
+        System.TimeSpan.FromSeconds seconds 
+        |> signal.WaitOne 
+        |> Assert.True
+    actorOf (fun msg -> signal.Set () |> ignore) 
+    |> spawn system name, waitForsignal
+    
 [<Fact>]
-let ``Create an item, retrieve it, update it, and delete it`` () =
-
-//    composeSystem ()
-
-    // TODO: make the signal waiter more generic
-    use signal = new System.Threading.AutoResetEvent false
-    let waiter = spawn system "testsignalwaiter" <| actorOf (fun msg ->
-        signal.Set () |> ignore)
+let ``Create, retrieve, update, and delete an item`` () =
+    
+    let waiter, waitForSignal = createWaiter "crudWaiter"
     actionable.actionItemPersisterEventBroadcaster <! Subscribe waiter
 
     let title = "Hoobada Da Jubada Jistaliee"
@@ -54,18 +47,17 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
     let description' = "hiplity dw mitibly fublin"
     let streamId = StreamId.create ()
     actionable.actionItemAggregateProcessor 
-    <! envelopWithDefaults 
-        (UserId.box "sampleuserid")
-        (TransId.create ())
-        (streamId) 
-        (Version.box 0s) 
-        (ActionItemCommand.Create 
-            <| (["actionable.title",title;
-                 "actionable.description", description] |> Map.ofList))
+        <! envelopWithDefaults 
+            (UserId.box "sampleuserid")
+            (TransId.create ())
+            (streamId) 
+            (Version.box 0s) 
+            (["actionable.title",title;
+              "actionable.description", description] 
+             |> Map.ofList
+             |> ActionItemCommand.Create)
 
-    System.TimeSpan.FromSeconds 60.0 
-    |> signal.WaitOne 
-    |> Assert.True
+    waitForSignal 60.0
 
     let results = fetch "sampleuserid"
     match results |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
@@ -76,18 +68,17 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
                 Assert.True (item.Fields.["actionable.description"] = description)
 
                 actionable.actionItemAggregateProcessor 
-                <! envelopWithDefaults 
-                    (UserId.box "sampleuserid")
-                    (TransId.create ())
-                    (streamId) 
-                    (Version.box 1s) 
-                    (ActionItemCommand.Update 
-                        <| (["actionable.title",title;
-                             "actionable.description", description'] |> Map.ofList))
+                    <! envelopWithDefaults 
+                        (UserId.box "sampleuserid")
+                        (TransId.create ())
+                        (streamId) 
+                        (Version.box 1s) 
+                        (["actionable.title",title;
+                          "actionable.description", description'] 
+                         |> Map.ofList
+                         |> ActionItemCommand.Update)
                                          
-                System.TimeSpan.FromSeconds 60.0 
-                |> signal.WaitOne 
-                |> Assert.True
+                waitForSignal 60.0
 
                 let results' = fetch "sampleuserid"
 
@@ -98,7 +89,4 @@ let ``Create an item, retrieve it, update it, and delete it`` () =
                         Assert.Equal (ident, item'.Id)
                         Assert.Equal (description', item'.Fields.["actionable.description"])
 
-    Assert.True true
-    
-type Class1() = 
-    member this.X = "F#"
+
