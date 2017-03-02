@@ -35,9 +35,9 @@ let main argv =
     let z = SUserId.unbox w
 
 
-//    DoX ()
-    let example = ActorExample ()
-    example.run ()
+////    DoX ()
+//    let example = ActorExample ()
+//    example.run ()
 
     let system = Configuration.load () |> System.create "system" 
     //let actorRef = spawn system "myActor" (actorOf (fun msg -> (* Handle message here *) () ))

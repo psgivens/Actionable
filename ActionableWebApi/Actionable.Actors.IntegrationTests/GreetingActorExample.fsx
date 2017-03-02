@@ -1,4 +1,6 @@
-﻿namespace Actionable.Actors
+﻿#load "./References.fsx"
+
+//namespace Actionable.Actors
 open Akka
 open Akka.Actor
 open Akka.FSharp
