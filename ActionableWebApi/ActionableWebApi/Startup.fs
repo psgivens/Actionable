@@ -66,7 +66,7 @@ type Startup () =
     let configureServices (config:HttpConfiguration) =
          config.Services.Replace(
             typeof<System.Web.Http.Dispatcher.IHttpControllerActivator>,
-            CompositRoot())
+            ActionableWebApi.CompositRoot())
 
     member this.Configuration (app:IAppBuilder) =
         //System.Diagnostics.Debugger.Break ()   
