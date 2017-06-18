@@ -1,6 +1,8 @@
 ﻿module Actionable.Actors.IntegrationTests.ActionsActorsTests
 
 open Xunit
+open FsUnit
+open FsUnit.Xunit
 
 open Akka
 open Akka.Actor
@@ -27,20 +29,32 @@ let actionable =
 
 open Actionable.Actors.Infrastructure
 
-let createWaiter name = 
-    use signal = new System.Threading.AutoResetEvent false    
-    let waitForsignal seconds =     
+type SignalWaiter (name, system) = 
+    let signal = new System.Threading.AutoResetEvent false    
+
+    let actor = 
+        actorOf (fun msg -> signal.Set () |> ignore) 
+        |> spawn system name
+
+    member this.Actor 
+        with get () = actor
+
+    member this.Wait seconds = 
         System.TimeSpan.FromSeconds seconds 
         |> signal.WaitOne 
         |> Assert.True
-    actorOf (fun msg -> signal.Set () |> ignore) 
-    |> spawn system name, waitForsignal
+        
+    interface System.IDisposable  with 
+        member x.Dispose() = signal.Dispose ()
     
 [<Fact>]
 let ``Create, retrieve, update, and delete an item`` () =
-    
-    let waiter, waitForSignal = createWaiter "crudWaiter"
-    actionable.actionItemPersisterEventBroadcaster <! Subscribe waiter
+  
+    use waiter = new SignalWaiter ("crudWaiter", system)
+    //let waiter, waitForSignal, disgnal = createWaiter "crudWaiter"
+    //use disposeSignal = disgnal
+
+    actionable.actionItemPersisterEventBroadcaster <! Subscribe (waiter.Actor)
 
     let title = "Hoobada Da Jubada Jistaliee"
     let description = "hiplity fublin"
@@ -57,36 +71,50 @@ let ``Create, retrieve, update, and delete an item`` () =
              |> Map.ofList
              |> ActionItemCommand.Create)
 
-    waitForSignal 60.0
+    waiter.Wait 60.0
 
     let results = fetch "sampleuserid"
-    match results |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
-        with
-            | None -> failwith <| sprintf "item '%s' was not found" title
-            | Some item -> 
-                let ident = item.Id
-                Assert.True (item.Fields.["actionable.description"] = description)
+    let item = 
+        match results |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
+            with
+                | None -> failwith <| sprintf "item '%s' was not found" title
+                | Some item -> item
+    
+    item.Fields.["actionable.description"] |> should equal description
 
-                actionable.actionItemAggregateProcessor 
-                    <! envelopWithDefaults 
-                        (UserId.box "sampleuserid")
-                        (TransId.create ())
-                        (streamId) 
-                        (Version.box 1s) 
-                        (["actionable.title",title;
-                          "actionable.description", description'] 
-                         |> Map.ofList
-                         |> ActionItemCommand.Update)
-                                         
-                waitForSignal 60.0
+    actionable.actionItemAggregateProcessor 
+        <! envelopWithDefaults 
+            (UserId.box "sampleuserid")
+            (TransId.create ())
+            (streamId) 
+            (Version.box 1s) 
+            (["actionable.title",title;
+                "actionable.description", description'] 
+                |> Map.ofList
+                |> ActionItemCommand.Update)
 
-                let results' = fetch "sampleuserid"
+    waiter.Wait 60.0
+    let results' = fetch "sampleuserid"
+    let item' = 
+        match results' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
+            with
+            | None -> failwith "Could not find item"
+            | Some item' -> item'
 
-                match results' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
-                    with
-                    | None -> failwith "Could not find item"
-                    | Some (item') -> 
-                        Assert.Equal (ident, item'.Id)
-                        Assert.Equal (description', item'.Fields.["actionable.description"])
+    item.Id |> should equal item'.Id
+    item'.Fields.["actionable.description"] |> should equal description'
+
+    actionable.actionItemAggregateProcessor 
+        <! envelopWithDefaults 
+            (UserId.box "sampleuserid")
+            (TransId.create ())
+            (streamId) 
+            (Version.box 1s) 
+            (ActionItemCommand.Delete)
+                
+    waiter.Wait 60.0
+    let results'' = fetch "sampleuserid"
+    let item''' = results'' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
+    item''' |> should equal None
 
 

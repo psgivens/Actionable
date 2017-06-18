@@ -30,7 +30,8 @@ let mutable actionItems = Map.empty<System.Guid,ActionItem>
 let persist userId (StreamId.Id(streamId)) state = 
     async {
         match state with
-        | DoesNotExist -> ()
+        | DoesNotExist -> 
+            actionItems <- actionItems.Remove streamId
         | State(item) ->
             actionItems <- actionItems.Add(streamId, item)
         do! async.Zero ()
