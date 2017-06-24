@@ -11,14 +11,14 @@ open Actionable.Actors.Aggregates
 
 open Actionable.Domain
 open Actionable.Domain.ActionItemModule
-open Actionable.Domain.SessionNotificationsModule
+open Actionable.Domain.UserNotificationsModule
 open Actionable.Domain.Infrastructure
 
 type ActionableActors 
         (system:ActorSystem, 
          actionItemEventStore:IEventStore<Envelope<ActionItemEvent>>, 
-         notificationEventStore:IEventStore<Envelope<SessionNotificationsEvent>>,
-         persist:UserId -> StreamId -> ActionItemState -> Async<unit>) as actors =
+         notificationEventStore:IEventStore<Envelope<UserNotificationsEvent>>,
+         persistItems:UserId -> StreamId -> ActionItemState -> Async<unit>) as actors =
     do actors.StartPersister () 
     do actors.StartActionItemAggregator ()
     do actors.StartSessionNotificationsAggregator ()
@@ -26,12 +26,19 @@ type ActionableActors
     [<DefaultValue>] val mutable actionItemPersisterEventBroadcaster :IActorRef
     [<DefaultValue>] val mutable actionItemPersisterErrorBroadcaster :IActorRef
     [<DefaultValue>] val mutable actionItemPersistanceProcessor :IActorRef
+
     [<DefaultValue>] val mutable actionItemEventBroadcaster :IActorRef
     [<DefaultValue>] val mutable actionItemErrorBroadcaster :IActorRef
     [<DefaultValue>] val mutable actionItemAggregateProcessor :IActorRef
-    [<DefaultValue>] val mutable sessionNotificationsEventBroadcaster :IActorRef
-    [<DefaultValue>] val mutable sessionNotificationsErrorBroadcaster :IActorRef
-    [<DefaultValue>] val mutable sessionNotificationsAggregateProcessor :IActorRef
+    
+    [<DefaultValue>] val mutable userNotificationsPersisterEventBroadcaster :IActorRef
+    [<DefaultValue>] val mutable userNotificationsPersisterErrorBroadcaster :IActorRef
+    [<DefaultValue>] val mutable userNotificationsPersistanceProcessor :IActorRef
+
+    [<DefaultValue>] val mutable userNotificationsEventBroadcaster :IActorRef
+    [<DefaultValue>] val mutable userNotificationsErrorBroadcaster :IActorRef
+    [<DefaultValue>] val mutable userNotificationsAggregateProcessor :IActorRef
+    
     [<DefaultValue>] val mutable actionItemToSessionTranlator :IActorRef
     
     member this.StartPersister () = 
@@ -44,7 +51,7 @@ type ActionableActors
                 ActionItemState.DoesNotExist,
                 actionItemEventStore,
                 ActionItemModule.buildState,
-                persist)
+                persistItems)
             |> spawn system "actionItemPersistanceProcessor"
 
     member this.StartActionItemAggregator () = 
@@ -61,16 +68,16 @@ type ActionableActors
             |> spawn system "actionItemAggregateProcessor"
     
     member this.StartSessionNotificationsAggregator () = 
-        this.sessionNotificationsEventBroadcaster <- subject system "sessionNotificationsEventBroadcaster" 
-        this.sessionNotificationsErrorBroadcaster <- subject system "sessionNotificationsErrorBroadcaster"
-        this.sessionNotificationsAggregateProcessor <- 
-            AggregateAgent<SessionNotificationsState, SessionNotificationsCommand, SessionNotificationsEvent>.Create (
-                this.sessionNotificationsEventBroadcaster,
-                this.sessionNotificationsErrorBroadcaster,
-                SessionNotificationsState.DoesNotExist,                
+        this.userNotificationsEventBroadcaster <- subject system "sessionNotificationsEventBroadcaster" 
+        this.userNotificationsErrorBroadcaster <- subject system "sessionNotificationsErrorBroadcaster"
+        this.userNotificationsAggregateProcessor <- 
+            AggregateAgent<UserNotificationsState, UserNotificationsCommand, UserNotificationsEvent>.Create (
+                this.userNotificationsEventBroadcaster,
+                this.userNotificationsErrorBroadcaster,
+                UserNotificationsState.DoesNotExist,                
                 notificationEventStore,
-                SessionNotificationsModule.buildState, 
-                SessionNotificationsModule.handle)
+                UserNotificationsModule.buildState, 
+                UserNotificationsModule.handle)
             |> spawn system "sessionNotificationsAggregateProcessor"
         this.actionItemToSessionTranlator <-     
             spawn system "actionItemToSessionTranslator" 
@@ -78,8 +85,8 @@ type ActionableActors
                     envelope 
                     |> repackage (fun actionItemEvent ->  
                         "Event to Command Notification" 
-                        |> SessionNotificationsCommand.AppendMessage )
-                    |> this.sessionNotificationsAggregateProcessor.Tell
+                        |> UserNotificationsCommand.AppendMessage )
+                    |> this.userNotificationsAggregateProcessor.Tell
                 )
                 
 

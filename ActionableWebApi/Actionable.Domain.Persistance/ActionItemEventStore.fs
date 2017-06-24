@@ -1,10 +1,9 @@
-﻿module Actionable.Domain.Persistance.EventSourcing.EF
+﻿module Actionable.Domain.Persistance.EventSourcing.ActionItemEF
 
 open Actionable.Domain.Infrastructure
 open Actionable.Domain.ActionItemModule
 open Newtonsoft.Json
 open Actionable.Data
-
 
 type Actionable.Data.ActionableDbContext with 
     member this.GetActionItemEvents<'a> (StreamId.Id (aggregateId):StreamId) :seq<Envelope<'a>>= 
@@ -23,34 +22,6 @@ type Actionable.Data.ActionableDbContext with
                     Item = (JsonConvert.DeserializeObject<'a> event.Event)
                 }
             )
-
-
-type GenericEventStore<'a> () =
-    interface IEventStore<Envelope<'a>> with
-        member this.GetEvents (streamId:StreamId) =
-            use context = new ActionableDbContext ()
-            context.GetActionItemEvents streamId 
-            |> Seq.toList 
-            |> List.sortBy(fun x -> x.Version)
-        member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<'a>) =
-            async { 
-                try
-                    use context = new ActionableDbContext ()
-                    context.ActionItemEvents.Add (
-                        ActionItemEnvelopeEntity (  Id = envelope.Id,
-                                                    StreamId = StreamId.unbox envelope.StreamId,
-                                                    UserId = UserId.unbox envelope.UserId,
-                                                    TransactionId = TransId.unbox envelope.TransactionId,
-                                                    Version = Version.unbox envelope.Version,
-                                                    TimeStamp = envelope.Created,
-                                                    Event = JsonConvert.SerializeObject(envelope.Item)
-                                                    )) |> ignore         
-                    do! Async.AwaitTask (context.SaveChangesAsync()) |> Async.Ignore 
-                    do! async.Zero ()
-                with
-                    | ex -> System.Diagnostics.Debugger.Break () 
-                }
-
 
 type ActionItemEventStore () =
     interface IEventStore<Envelope<ActionItemEvent>> with
@@ -200,3 +171,5 @@ let fetchActionItems userId =
         select actionItem }
     |> Seq.map mapToActionItemReadModel
     |> Seq.toList
+
+

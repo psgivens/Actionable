@@ -9,7 +9,7 @@ open System.Security.Principal
 open Microsoft.AspNet.Identity
 
 open Actionable.Data
-open Actionable.Domain.Persistance.EventSourcing.EF
+open Actionable.Domain.Persistance.EventSourcing.ActionItemEF
 
 type ResponseCode () =
     [<DefaultValue>] val mutable Message : string

@@ -5,7 +5,7 @@ open System.Web.Http.Dispatcher
 open System.Web.Http.Controllers;
 
 open Actionable.Agents.Composition
-open Actionable.Domain.Persistance.EventSourcing.EF
+open Actionable.Domain.Persistance.EventSourcing.ActionItemEF
 
 
 type CompositRoot () = 

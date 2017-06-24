@@ -1,10 +1,6 @@
-﻿module Actionable.Actors.UnitTests.MyUnitTests
+﻿module Actionable.Actors.UnitTests.``Unit Test Infrastructure Discovers Test``
 
 open Xunit
 
 [<Fact>]
-let doit () =
-    ()
-
-type Class1() = 
-    member this.X = "F#"
+let ``I Exist`` () = ()

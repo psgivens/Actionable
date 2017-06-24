@@ -14,7 +14,7 @@ open Actionable.Data
 open Actionable.Domain.ActionItemModule
 open Actionable.Domain.Infrastructure
 
-open Actionable.Domain.Persistance.EventSourcing.EF
+open Actionable.Domain.Persistance.EventSourcing.ActionItemEF
 open System.Web.SessionState
             
 type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItems:string->ActionItemReadModel list) =

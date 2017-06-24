@@ -9,7 +9,7 @@ open Akka.FSharp
 open Actionable.Domain.Infrastructure
 open Actionable.Domain
 open Actionable.Domain.ActionItemModule
-open Actionable.Domain.SessionNotificationsModule
+open Actionable.Domain.UserNotificationsModule
 
 open Actionable.Actors 
 open Actionable.Actors.Initialization
@@ -22,8 +22,8 @@ let actionable =
     composeSystem 
         (system, 
          MemoryStore<ActionItemEvent> (), 
-         MemoryStore<SessionNotificationsEvent> (),
-         persist) // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
+         MemoryStore<UserNotificationsEvent> (),
+         persistActionItem) // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
 
 open Actionable.Actors.Infrastructure
 
@@ -46,13 +46,9 @@ type SignalWaiter (name, system) =
         member x.Dispose() = signal.Dispose ()
 
 [<Fact>]
-let ``Create, retrieve, update, and delete an item`` () =
-  
-    use waiter = new SignalWaiter ("crudWaiter", system)
-    //let waiter, waitForSignal, disgnal = createWaiter "crudWaiter"
-    //use disposeSignal = disgnal
-
-    actionable.actionItemPersisterEventBroadcaster <! Subscribe (waiter.Actor)
+let ``Create, retrieve, update, and delete an item`` () =  
+    use waiter = new SignalWaiter ("crudWaiter", system)    
+    actionable.actionItemPersisterEventBroadcaster <! Subscribe waiter.Actor
 
     let title = "Hoobada Da Jubada Jistaliee"
     let description = "hiplity fublin"
@@ -71,7 +67,7 @@ let ``Create, retrieve, update, and delete an item`` () =
 
     waiter.Wait 60.0
 
-    let results = fetch "sampleuserid"
+    let results = fetchActionItem "sampleuserid"
     let item = 
         match results |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
             with
@@ -92,7 +88,7 @@ let ``Create, retrieve, update, and delete an item`` () =
                 |> ActionItemCommand.Update)
 
     waiter.Wait 60.0
-    let results' = fetch "sampleuserid"
+    let results' = fetchActionItem "sampleuserid"
     let item' = 
         match results' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
             with
@@ -111,7 +107,7 @@ let ``Create, retrieve, update, and delete an item`` () =
             (ActionItemCommand.Delete)
                 
     waiter.Wait 60.0
-    let results'' = fetch "sampleuserid"
+    let results'' = fetchActionItem "sampleuserid"
     let item''' = results'' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
     
     Assert.Equal (item''', None)

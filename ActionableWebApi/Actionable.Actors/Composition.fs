@@ -9,7 +9,7 @@ open Actionable.Domain.Infrastructure.Envelope
 open Actionable.Actors.Initialization
 
 open Actionable.Domain.ActionItemModule
-open Actionable.Domain.SessionNotificationsModule
+open Actionable.Domain.UserNotificationsModule
 open Actionable.Domain.Infrastructure
 
 NewtonsoftHack.resolveNewtonsoft ()
@@ -17,9 +17,9 @@ NewtonsoftHack.resolveNewtonsoft ()
 let composeSystem 
        (system:ActorSystem, 
         actionItemEventStore:IEventStore<Envelope<ActionItemEvent>>, 
-        notificationsEventStore:IEventStore<Envelope<SessionNotificationsEvent>>, 
-        persist:UserId -> StreamId -> ActionItemState -> Async<unit>) =
-    let actionable = ActionableActors (system, actionItemEventStore, notificationsEventStore, persist)
+        notificationsEventStore:IEventStore<Envelope<UserNotificationsEvent>>, 
+        persistItem:UserId -> StreamId -> ActionItemState -> Async<unit>) =
+    let actionable = ActionableActors (system, actionItemEventStore, notificationsEventStore, persistItem)
     actionable.actionItemEventBroadcaster <! Subscribe actionable.actionItemPersistanceProcessor
     actionable.actionItemPersisterEventBroadcaster <! Subscribe actionable.actionItemToSessionTranlator
     actionable

@@ -25,9 +25,9 @@ type MemoryStore<'TEventType> () =
                 do! async.Zero ()
             }
 
-open Actionable.Domain.Persistance.EventSourcing.EF
+open Actionable.Domain.Persistance.EventSourcing.ActionItemEF
 let mutable actionItems = Map.empty<System.Guid,ActionItem>
-let persist userId (StreamId.Id(streamId)) state = 
+let persistActionItem userId (StreamId.Id(streamId)) state = 
     async {
         match state with
         | DoesNotExist -> 
@@ -37,7 +37,7 @@ let persist userId (StreamId.Id(streamId)) state =
         do! async.Zero ()
     }
 
-let fetch userId :ActionItemReadModel list= 
+let fetchActionItem userId :ActionItemReadModel list= 
     actionItems 
     |> Map.map (fun key value ->
         {
