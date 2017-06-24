@@ -10,10 +10,10 @@ namespace Actionable.Data.UnitTests {
     public class ActionableDbContextTests {
         //[Fact]
         //public void RunSimpleTest() {
-        //    using(var context = new ActionableDbContext()) {
+        //    using (var context = new ActionableDbContext()) {
         //        var taskTypes = context.TaskTypeDefinitions.ToList();
-
-        //        var items = context.ActionItems;
+        //
+        //        var items = context.ActionItemEvents;
         //        Assert.True(items.ToList().Count > 0);
         //    }
         //}

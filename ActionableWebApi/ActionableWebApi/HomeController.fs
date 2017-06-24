@@ -3,7 +3,10 @@ namespace ActionableWebApi
 open System
 open System.Net
 open System.Net.Http
+open System.Net.Http.Formatting
+//open Microsoft.AspNet.WebApi.Client
 open System.Web.Http
+
 
 type HomeRendition () =
     [<DefaultValue>] val mutable Message : string

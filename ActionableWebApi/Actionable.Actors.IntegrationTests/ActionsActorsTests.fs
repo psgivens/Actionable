@@ -1,8 +1,6 @@
 ﻿module Actionable.Actors.IntegrationTests.ActionsActorsTests
 
 open Xunit
-open FsUnit
-open FsUnit.Xunit
 
 open Akka
 open Akka.Actor
@@ -46,7 +44,7 @@ type SignalWaiter (name, system) =
         
     interface System.IDisposable  with 
         member x.Dispose() = signal.Dispose ()
-    
+
 [<Fact>]
 let ``Create, retrieve, update, and delete an item`` () =
   
@@ -67,9 +65,9 @@ let ``Create, retrieve, update, and delete an item`` () =
             (streamId) 
             (Version.box 0s) 
             (["actionable.title",title;
-              "actionable.description", description] 
-             |> Map.ofList
-             |> ActionItemCommand.Create)
+                "actionable.description", description] 
+                |> Map.ofList
+                |> ActionItemCommand.Create)
 
     waiter.Wait 60.0
 
@@ -80,7 +78,7 @@ let ``Create, retrieve, update, and delete an item`` () =
                 | None -> failwith <| sprintf "item '%s' was not found" title
                 | Some item -> item
     
-    item.Fields.["actionable.description"] |> should equal description
+    Assert.Equal (item.Fields.["actionable.description"], description)
 
     actionable.actionItemAggregateProcessor 
         <! envelopWithDefaults 
@@ -101,8 +99,8 @@ let ``Create, retrieve, update, and delete an item`` () =
             | None -> failwith "Could not find item"
             | Some item' -> item'
 
-    item.Id |> should equal item'.Id
-    item'.Fields.["actionable.description"] |> should equal description'
+    Assert.Equal (item.Id, item'.Id)
+    Assert.Equal (item'.Fields.["actionable.description"], description')
 
     actionable.actionItemAggregateProcessor 
         <! envelopWithDefaults 
@@ -115,6 +113,7 @@ let ``Create, retrieve, update, and delete an item`` () =
     waiter.Wait 60.0
     let results'' = fetch "sampleuserid"
     let item''' = results'' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
-    item''' |> should equal None
+    
+    Assert.Equal (item''', None)
 
 

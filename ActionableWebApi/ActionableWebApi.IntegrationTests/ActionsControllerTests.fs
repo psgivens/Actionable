@@ -28,15 +28,16 @@ type ActionsControllerTests() =
     let compositRoot = CompositRoot ()
     let requestMessage = new System.Net.Http.HttpRequestMessage ()
     let actionController = (compositRoot :> IHttpControllerActivator).Create (
-        (requestMessage), 
-        (null :> System.Web.Http.Controllers.HttpControllerDescriptor), 
-        typedefof<ActionsController>) :?> ActionsController
+                                (requestMessage), 
+                                (null :> System.Web.Http.Controllers.HttpControllerDescriptor), 
+                                typedefof<ActionsController>) :?> ActionsController
     do actionController.Request <- requestMessage
     do actionController.Configuration <- new System.Web.Http.HttpConfiguration ()
     do actionController.User <- TestUser ()
     
             //((ActionableWebApi.ResponseToQuery)().Value).Results[0].Fields
 
+  //  [<Fact>]
     [<Fact>]
     member this.``Retrieve all items for the authenticated user`` () =
         let result = actionController.Get () 
@@ -46,6 +47,7 @@ type ActionsControllerTests() =
         //((ActionableWebApi.ResponseToQuery)((System.Net.Http.ObjectContent<ActionableWebApi.ResponseToQuery>)result.Content).Value).Results[0].Fields
 
     [<Fact>]
+    //[<Test>]
     member this.``Create an item, retrieve it, update it, and delete it`` () =
         let title = "Hibidy jibity " + (System.Guid.NewGuid ()).ToString()
         let description = "have fun"
@@ -63,7 +65,7 @@ type ActionsControllerTests() =
             | None -> failwith <| sprintf "item '%s' was not found" title
             | Some item -> 
                 let ident = item.Id
-                Assert.True (item.Fields.["actionable.description"] = description)
+                Assert.Equal (item.Fields.["actionable.description"], description)
         
                 ignore <| actionController.Post {
                     Id = item.Id.ToString ()
