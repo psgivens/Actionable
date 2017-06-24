@@ -1,15 +1,16 @@
 ﻿module Actionable.Domain.UserNotificationsModule
 
-type UserNotification = { message:string; status:int }
-type UserNotifications = { messages:Map<int,UserNotification > }
+type UserNotification = { code:int; message:string; status:int }
+type UserNotifications = { userId:string; items:Map<int, UserNotification>}
 
 type UserNotificationsCommand = 
-    | AppendMessage of string
+    | AppendMessage of string * int * string
     | AcknowledgeMessage of int
 
 type UserNotificationsEvent =
-    | MessageAppended of int * UserNotification
+    | MessageCreated of string * int * int * string
     | MessageAcknowledged of int
+    | MessageRemoved of int
 
 type UserNotificationsState = 
     | DoesNotExist
@@ -23,10 +24,10 @@ type InvalidEvent (state:UserNotificationsState, event:UserNotificationsEvent) =
 
 let handle state command =
     match state, command with
-    | DoesNotExist, AppendMessage (message) -> MessageAppended (1, {message=message; status=0}) 
-    | State (notifications), AppendMessage (message) -> 
-        let key = notifications.messages |> Map.toSeq |> Seq.map fst |> Seq.max 
-        MessageAppended (key+1, {message=message; status=0})
+    | DoesNotExist, AppendMessage (userId, code, message) -> MessageCreated (userId, 1, code, message) 
+    | State (notifications), AppendMessage (userId, code, message) -> 
+        let key = notifications.items |> Map.toSeq |> Seq.map fst |> Seq.max 
+        MessageCreated (userId, key+1, code, message)
     | State (notifications), AcknowledgeMessage (key) ->
         //let message = notifications.messages |> Map.find key 
         //notifications |> Map.add key message 
@@ -38,21 +39,36 @@ module Map =
 
 let evolveState state event =
     match state, event with
-    | State (notifications), MessageAppended (idx, notification) -> 
+    | UserNotificationsState.DoesNotExist, MessageCreated (userId, id, code, message) ->
+        State (
+            {   UserNotifications.userId = userId;
+                items=[(id,{UserNotification.code=code; message=message; status=0})] |> Map.ofList }
+        )
+    | State (notifications), MessageCreated (userId, id, code, message) -> 
         State (
             { notifications with 
-                messages = notifications.messages |> Map.add idx notification 
+                items = notifications.items |> Map.add id {UserNotification.code=code; message=message; status=0}
             }
         )
     | State (notifications), MessageAcknowledged (idx) -> 
-        let notification = notifications.messages |> Map.find idx
+        let notification = notifications.items |> Map.find idx
         State (
             { notifications with
-                messages = 
-                    notifications.messages 
-                    |> Map.add idx {message=notification.message; status=1}
+                items = 
+                    notifications.items 
+                    |> Map.add idx {notification with status=1}
             }
         )
+    | State (notifications), MessageRemoved (idx) -> 
+        let notification = notifications.items |> Map.find idx
+        State (
+            { notifications with
+                items = 
+                    notifications.items 
+                    |> Map.remove idx 
+            }
+        )
+
     | s, e -> raise <| InvalidEvent (s,e)
 
 let buildState =

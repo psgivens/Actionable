@@ -23,7 +23,10 @@ let actionable =
         (system, 
          MemoryStore<ActionItemEvent> (), 
          MemoryStore<UserNotificationsEvent> (),
-         persistActionItem) // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
+         persistActionItem,
+         persistUserNotification
+         )
+          // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
 
 open Actionable.Actors.Infrastructure
 

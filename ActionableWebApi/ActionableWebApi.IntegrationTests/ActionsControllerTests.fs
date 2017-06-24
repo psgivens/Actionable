@@ -4,10 +4,6 @@ open Xunit
 open ActionableWebApi
 open System.Web.Http.Dispatcher
 
-//[<Fact>]
-//let ``I can list the items in the database`` () =
-//    Assert.True true
-
 module HttpTest = 
     let unpack<'TType> (result:System.Net.Http.HttpResponseMessage) :'TType = 
         let content = result.Content :?> System.Net.Http.ObjectContent<'TType>
@@ -37,7 +33,6 @@ type ActionsControllerTests() =
     
             //((ActionableWebApi.ResponseToQuery)().Value).Results[0].Fields
 
-  //  [<Fact>]
     [<Fact>]
     member this.``Retrieve all items for the authenticated user`` () =
         let result = actionController.Get () 
@@ -47,7 +42,6 @@ type ActionsControllerTests() =
         //((ActionableWebApi.ResponseToQuery)((System.Net.Http.ObjectContent<ActionableWebApi.ResponseToQuery>)result.Content).Value).Results[0].Fields
 
     [<Fact>]
-    //[<Test>]
     member this.``Create an item, retrieve it, update it, and delete it`` () =
         let title = "Hibidy jibity " + (System.Guid.NewGuid ()).ToString()
         let description = "have fun"
@@ -57,7 +51,7 @@ type ActionsControllerTests() =
             Fields = [("actionable.title", title);("actionable.description",description)] |> Map.ofList
             Date = System.DateTimeOffset.Now.ToString ()
         }
-        System.Threading.Thread.Sleep 20000
+        System.Threading.Thread.Sleep 2000
         let result = actionController.Get ()
         let response = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result
         match response.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
@@ -75,7 +69,7 @@ type ActionsControllerTests() =
                     Date = System.DateTimeOffset.Now.ToString ()
                 } 
 
-                System.Threading.Thread.Sleep 20000
+                System.Threading.Thread.Sleep 2000
                 let result' = actionController.Get ()
                 let response' = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result'
                 match response'.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)

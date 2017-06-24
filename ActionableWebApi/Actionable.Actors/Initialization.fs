@@ -18,8 +18,10 @@ type ActionableActors
         (system:ActorSystem, 
          actionItemEventStore:IEventStore<Envelope<ActionItemEvent>>, 
          notificationEventStore:IEventStore<Envelope<UserNotificationsEvent>>,
-         persistItems:UserId -> StreamId -> ActionItemState -> Async<unit>) as actors =
-    do actors.StartPersister () 
+         persistItems:UserId -> StreamId -> ActionItemState -> Async<unit>,
+         persistUserNotifications:UserId -> StreamId -> UserNotificationsState -> Async<unit>) as actors =
+    do actors.StartActionItemPersister () 
+    do actors.StartUserNotificationsPersister ()
     do actors.StartActionItemAggregator ()
     do actors.StartSessionNotificationsAggregator ()
 
@@ -41,7 +43,7 @@ type ActionableActors
     
     [<DefaultValue>] val mutable actionItemToSessionTranlator :IActorRef
     
-    member this.StartPersister () = 
+    member this.StartActionItemPersister () = 
         this.actionItemPersisterEventBroadcaster <- subject system "actionItemPersisterEventBroadcaster" 
         this.actionItemPersisterErrorBroadcaster <- subject system "actionItemPersisterErrorBroadcaster"
         this.actionItemPersistanceProcessor <-
@@ -53,6 +55,20 @@ type ActionableActors
                 ActionItemModule.buildState,
                 persistItems)
             |> spawn system "actionItemPersistanceProcessor"
+
+    member this.StartUserNotificationsPersister () = 
+        this.userNotificationsPersisterEventBroadcaster <- subject system "userNotificationsPersisterEventBroadcaster" 
+        this.userNotificationsPersisterErrorBroadcaster <- subject system "userNotificationsPersisterErrorBroadcaster"
+        this.userNotificationsPersistanceProcessor <-
+            PersistingActor<UserNotificationsState, UserNotificationsCommand, UserNotificationsEvent>.Create (
+                this.userNotificationsPersisterEventBroadcaster,
+                this.userNotificationsPersisterErrorBroadcaster,
+                UserNotificationsState.DoesNotExist,
+                notificationEventStore,
+                UserNotificationsModule.buildState,
+                persistUserNotifications)
+            |> spawn system "userNotificationsPersistanceProcessor"
+
 
     member this.StartActionItemAggregator () = 
         this.actionItemEventBroadcaster <- subject system "actionItemEventBroadcaster" 
@@ -82,11 +98,13 @@ type ActionableActors
         this.actionItemToSessionTranlator <-     
             spawn system "actionItemToSessionTranslator" 
                 <| actorOf (fun (envelope:Envelope<ActionItemEvent>) ->
-                    envelope 
-                    |> repackage (fun actionItemEvent ->  
-                        "Event to Command Notification" 
-                        |> UserNotificationsCommand.AppendMessage )
-                    |> this.userNotificationsAggregateProcessor.Tell
+                    let cmd = 
+                        envelope 
+                        |> repackage (fun actionItemEvent ->  
+                            (UserId.unbox envelope.UserId, 0, "Event to Command Notification")
+                            |> UserNotificationsCommand.AppendMessage )
+
+                    cmd |> this.userNotificationsAggregateProcessor.Tell
                 )
                 
 

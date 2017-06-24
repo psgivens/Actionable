@@ -76,6 +76,7 @@
     <Compile Include="MetaTypes\TypeDefinition.cs" />
     <Compile Include="MetaTypes\TypeInstance.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UserNotificationEntity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

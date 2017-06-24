@@ -21,5 +21,5 @@ namespace Actionable.Data {
         public virtual string Event { get; set; }
     }
     public class ActionItemEnvelopeEntity : EnvelopeEntityBase { }
-    public class NotificationEnvelope : EnvelopeEntityBase { }
+    public class UserNotificationEnvelope : EnvelopeEntityBase { }
 }
