@@ -1,10 +1,10 @@
 ﻿namespace Actionable.Actors.IntegrationTests 
 
 open EventSourceGherkin
-module ActionItemGherkin =
-    open Actionable.Domain.ActionItemModule    
+module UserNotificationsGherkin =
+    open Actionable.Domain.UserNotificationsModule
     let testing = 
-        TestConditions<ActionItemCommand, ActionItemEvent, ActionItemState> 
+        TestConditions<UserNotificationsCommand, UserNotificationsEvent, UserNotificationsState> 
             (buildState DoesNotExist, buildState, handle)
   
     let Given = testing.Given

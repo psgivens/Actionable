@@ -73,10 +73,10 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ActionItemEventStore.fs" />
     <Compile Include="UserNotificationEventStore.fs" />
     <Content Include="packages.config" />
     <Content Include="App.config" />
-    <Compile Include="ActionItemEventStore.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="EntityFramework">

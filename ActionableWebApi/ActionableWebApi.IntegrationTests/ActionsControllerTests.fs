@@ -4,10 +4,32 @@ open Xunit
 open ActionableWebApi
 open System.Web.Http.Dispatcher
 
+open Akka
+open Akka.Actor
+open Akka.FSharp
+
+open Actionable.Actors.Composition
+open InMemoryPersistance
+
+open Actionable.Domain.ActionItemModule
+open Actionable.Domain.UserNotificationsModule
+
+//open Actionable.Domain.Persistance.EventSourcing.ActionItemEF
+
 module HttpTest = 
     let unpack<'TType> (result:System.Net.Http.HttpResponseMessage) :'TType = 
         let content = result.Content :?> System.Net.Http.ObjectContent<'TType>
         content.Value :?> 'TType
+
+    let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
+    let actionable = 
+        composeSystem 
+            (system, 
+             MemoryStore<ActionItemEvent> (), 
+             MemoryStore<UserNotificationsEvent> (),
+             persistActionItem,
+             persistUserNotification
+             )
 
 // 
 // Some help was found through this: http://stackoverflow.com/questions/22762338/how-do-i-mock-user-identity-getuserid
@@ -20,29 +42,44 @@ type TestUser () =
             with get () = System.Security.Claims.ClaimsIdentity([claim]) :> System.Security.Principal.IIdentity
         member this.IsInRole roleName = true
 
-type ActionsControllerTests() = 
-    let compositRoot = CompositRoot ()
+type ``3 - Web - Integration Tests``() = 
+    let testUser = TestUser()
+    let actionable = HttpTest.actionable
+    let compositRoot = CompositRoot (actionable, InMemoryPersistance.fetchActionItem, InMemoryPersistance.fetchUserNotifications)
     let requestMessage = new System.Net.Http.HttpRequestMessage ()
-    let actionController = (compositRoot :> IHttpControllerActivator).Create (
-                                (requestMessage), 
-                                (null :> System.Web.Http.Controllers.HttpControllerDescriptor), 
-                                typedefof<ActionsController>) :?> ActionsController
+    let actionController = 
+        (compositRoot :> IHttpControllerActivator).Create (
+            (requestMessage), 
+            (null :> System.Web.Http.Controllers.HttpControllerDescriptor), 
+            typedefof<ActionsController>) :?> ActionsController
     do actionController.Request <- requestMessage
     do actionController.Configuration <- new System.Web.Http.HttpConfiguration ()
-    do actionController.User <- TestUser ()
-    
+    do actionController.User <- testUser
+    let notificationsController = 
+        (compositRoot :> IHttpControllerActivator).Create (
+            (requestMessage), 
+            (null :> System.Web.Http.Controllers.HttpControllerDescriptor), 
+            typedefof<UserNotificationsController>) :?> UserNotificationsController
+    let requestMessage = new System.Net.Http.HttpRequestMessage ()
+    do notificationsController.Request <- requestMessage
+    do notificationsController.Configuration <- new System.Web.Http.HttpConfiguration ()
+    do notificationsController.User <- testUser
             //((ActionableWebApi.ResponseToQuery)().Value).Results[0].Fields
 
-    [<Fact>]
-    member this.``Retrieve all items for the authenticated user`` () =
-        let result = actionController.Get () 
-        let response = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result
-        Assert.True (response.Results.Length > 0)
-        Assert.True true
-        //((ActionableWebApi.ResponseToQuery)((System.Net.Http.ObjectContent<ActionableWebApi.ResponseToQuery>)result.Content).Value).Results[0].Fields
+//    [<Fact>]
+//    member this.``Retrieve all items for the authenticated user`` () =
+//        let result = actionController.Get () 
+//        let response = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result
+//        Assert.True (response.Results.Length > 0)
+//        Assert.True true
+//        //((ActionableWebApi.ResponseToQuery)((System.Net.Http.ObjectContent<ActionableWebApi.ResponseToQuery>)result.Content).Value).Results[0].Fields
 
     [<Fact>]
-    member this.``Create an item, retrieve it, update it, and delete it`` () =
+    member this.``Test Discoverable`` () =
+        Assert.True true
+
+    [<Fact>]
+    member this.``Create item, get noti, get item, no noti`` () =
         let title = "Hibidy jibity " + (System.Guid.NewGuid ()).ToString()
         let description = "have fun"
         let description' = "have the most fun"
@@ -51,9 +88,15 @@ type ActionsControllerTests() =
             Fields = [("actionable.title", title);("actionable.description",description)] |> Map.ofList
             Date = System.DateTimeOffset.Now.ToString ()
         }
-        System.Threading.Thread.Sleep 2000
+        System.Threading.Thread.Sleep 2000       
+        
+        let nresult = notificationsController.Get ()
+        let nresponse = HttpTest.unpack<ActionableWebApi.UserNotificationsQueryResponse> nresult
+
+        failwith "Not implemented"
+        
         let result = actionController.Get ()
-        let response = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result
+        let response = HttpTest.unpack<ActionableWebApi.ActionItemsQueryResponse> result
         match response.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
             with
             | None -> failwith <| sprintf "item '%s' was not found" title
@@ -71,7 +114,7 @@ type ActionsControllerTests() =
 
                 System.Threading.Thread.Sleep 2000
                 let result' = actionController.Get ()
-                let response' = HttpTest.unpack<ActionableWebApi.ResponseToQuery> result'
+                let response' = HttpTest.unpack<ActionableWebApi.ActionItemsQueryResponse> result'
                 match response'.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
                     with 
                     | None -> failwith "Cannot find item"

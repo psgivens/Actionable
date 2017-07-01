@@ -1,4 +1,4 @@
-﻿module Actionable.Actors.IntegrationTests.ActionsActorsTests
+﻿module ``2 - Actors - Action Items Tests``
 
 open Xunit
 
@@ -16,8 +16,9 @@ open Actionable.Actors.Initialization
 open Actionable.Actors.Composition
 
 open InMemoryPersistance
+open Actionable.Actors.Composition
 
-let system = Configuration.defaultConfig () |> System.create "ActionableSystem"
+let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
 let actionable = 
     composeSystem 
         (system, 
@@ -51,13 +52,13 @@ type SignalWaiter (name, system) =
 [<Fact>]
 let ``Create, retrieve, update, and delete an item`` () =  
     use waiter = new SignalWaiter ("crudWaiter", system)    
-    actionable.actionItemPersisterEventBroadcaster <! Subscribe waiter.Actor
+    actionable.ActionItemPersisterEventBroadcaster <! Subscribe waiter.Actor
 
     let title = "Hoobada Da Jubada Jistaliee"
     let description = "hiplity fublin"
     let description' = "hiplity dw mitibly fublin"
     let streamId = StreamId.create ()
-    actionable.actionItemAggregateProcessor 
+    actionable.ActionItemAggregateProcessor 
         <! envelopWithDefaults 
             (UserId.box "sampleuserid")
             (TransId.create ())
@@ -79,7 +80,7 @@ let ``Create, retrieve, update, and delete an item`` () =
     
     Assert.Equal (item.Fields.["actionable.description"], description)
 
-    actionable.actionItemAggregateProcessor 
+    actionable.ActionItemAggregateProcessor 
         <! envelopWithDefaults 
             (UserId.box "sampleuserid")
             (TransId.create ())
@@ -101,7 +102,7 @@ let ``Create, retrieve, update, and delete an item`` () =
     Assert.Equal (item.Id, item'.Id)
     Assert.Equal (item'.Fields.["actionable.description"], description')
 
-    actionable.actionItemAggregateProcessor 
+    actionable.ActionItemAggregateProcessor 
         <! envelopWithDefaults 
             (UserId.box "sampleuserid")
             (TransId.create ())

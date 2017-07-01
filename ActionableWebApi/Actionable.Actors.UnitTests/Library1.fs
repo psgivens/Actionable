@@ -1,4 +1,4 @@
-﻿module Actionable.Actors.UnitTests.``Unit Test Infrastructure Discovers Test``
+﻿module Actionable.Actors.UnitTests.``_ Unit Test Infrastructure Verification``
 
 open Xunit
 

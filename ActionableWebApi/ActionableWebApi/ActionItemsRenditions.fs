@@ -32,6 +32,3 @@ type FieldRendition = {
     Value: string
 }
 
-type ResponseToQuery () =
-    [<DefaultValue>] val mutable Results : ActionItemReadModel list
-    [<DefaultValue>] val mutable Time : string

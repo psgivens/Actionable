@@ -75,5 +75,16 @@ let persistUserNotification (UserId.Val(userId)) (StreamId.Id(streamId)) state =
         do! async.Zero ()
     }
 
-let fetchUserNotifications userId :UserNotificationEntity list option= 
-    userNotifications |> Map.tryFind userId
+let fetchUserNotifications userId :UserNotificationReadModel list option= 
+    match userNotifications |> Map.tryFind userId with
+    | None -> None
+    | Some(items) ->
+        items 
+        |> List.map (fun item ->
+            {
+                UserNotificationReadModel.Id=item.Id
+                Type="Notification"
+                Message=item.Message
+                Status=item.Status
+            })
+        |> Some

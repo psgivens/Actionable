@@ -16,7 +16,11 @@ open Actionable.Domain.Infrastructure
 
 open Actionable.Domain.Persistance.EventSourcing.ActionItemEF
 open System.Web.SessionState
-            
+
+type ActionItemsQueryResponse () =
+    [<DefaultValue>] val mutable Results : ActionItemReadModel list
+    [<DefaultValue>] val mutable Time : string
+                
 type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItems:string->ActionItemReadModel list) =
     inherit ApiController ()
     
@@ -71,7 +75,7 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItems
     member this.Get () =
         this.Request.CreateResponse(
             HttpStatusCode.OK,
-            ResponseToQuery (
+            ActionItemsQueryResponse (
                 Results = fetchActionItems (this.User.Identity.GetUserId()),
                 Time = DateTimeOffset.Now.ToString("o")))
        

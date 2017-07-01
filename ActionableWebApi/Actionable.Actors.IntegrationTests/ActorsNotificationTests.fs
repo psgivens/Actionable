@@ -1,4 +1,4 @@
-﻿module Actionable.Actors.IntegrationTests.NotificationActorsTests
+﻿module ``2 - Actors - Notifications Tests``
 
 open Xunit
 
@@ -17,7 +17,7 @@ open Actionable.Actors.Composition
 
 open InMemoryPersistance
 
-let system = Configuration.defaultConfig () |> System.create "ActionableSystem"
+let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
 let actionable = 
     composeSystem 
         (system, 
@@ -48,15 +48,15 @@ type SignalWaiter (name, system) =
         member x.Dispose() = signal.Dispose ()
         
 [<Fact>]
-let ``Create, retrieve, update, and delete an item`` () =  
+let ``Create item, get noti., ack noti, no noti.`` () =  
     use waiter = new SignalWaiter ("crudWaiter", system)    
-    actionable.userNotificationsPersisterEventBroadcaster <! Subscribe waiter.Actor
+    actionable.UserNotificationsPersisterEventBroadcaster <! Subscribe waiter.Actor
 
     let title = "Hoobada Da Jubada Jistaliee"
     let description = "hiplity fublin"
     let description' = "hiplity dw mitibly fublin"
     let streamId = StreamId.create ()
-    actionable.actionItemAggregateProcessor 
+    actionable.ActionItemAggregateProcessor 
         <! envelopWithDefaults 
             (UserId.box "sampleuserid")
             (TransId.create ())
@@ -76,7 +76,7 @@ let ``Create, retrieve, update, and delete an item`` () =
         | Some ([n]) -> n
         | _ -> failwith <| "Expected notifications to have a value"
     
-    actionable.userNotificationsAggregateProcessor
+    actionable.UserNotificationsAggregateProcessor
         <! envelopWithDefaults 
             (UserId.box "sampleuserid")
             (TransId.create ())
@@ -91,41 +91,3 @@ let ``Create, retrieve, update, and delete an item`` () =
     | Some ([n]) when n.Status = 1 -> () 
     | _ -> failwith <| "Expected notifications to be cleared"
     
-//    actionable.actionItemAggregateProcessor 
-//        <! envelopWithDefaults 
-//            (UserId.box "sampleuserid")
-//            (TransId.create ())
-//            (streamId) 
-//            (Version.box 1s) 
-//            (["actionable.title",title;
-//                "actionable.description", description'] 
-//                |> Map.ofList
-//                |> ActionItemCommand.Update)
-//
-//    waiter.Wait 60.0
-//    let results' = fetchActionItem "sampleuserid"
-//    let item' = 
-//        match results' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
-//            with
-//            | None -> failwith "Could not find item"
-//            | Some item' -> item'
-//
-//    Assert.Equal (item.Id, item'.Id)
-//    Assert.Equal (item'.Fields.["actionable.description"], description')
-//
-//    actionable.actionItemAggregateProcessor 
-//        <! envelopWithDefaults 
-//            (UserId.box "sampleuserid")
-//            (TransId.create ())
-//            (streamId) 
-//            (Version.box 1s) 
-//            (ActionItemCommand.Delete)
-//                
-//    waiter.Wait 60.0
-//    let results'' = fetchActionItem "sampleuserid"
-//    let item''' = results'' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
-//    
-//    Assert.Equal (item''', None)
-
-
-

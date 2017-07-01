@@ -29,15 +29,13 @@ let composeSystem
         persistItem:UserId -> StreamId -> ActionItemState -> Async<unit>,
         persistUserNotifications:UserId -> StreamId -> UserNotificationsState -> Async<unit>) =
     let actionable = ActionableActors (system, actionItemEventStore, notificationsEventStore, persistItem, persistUserNotifications)
-    actionable.actionItemEventBroadcaster <! Subscribe actionable.actionItemPersistanceProcessor
-    //actionable.actionItemPersisterEventBroadcaster <! Subscribe actionable.actionItemToSessionTranlator
-    actionable.actionItemEventBroadcaster <! Subscribe actionable.actionItemToSessionTranlator
-    actionable.actionItemToSessionTranlator <! Subscribe actionable.userNotificationsAggregateProcessor
-    actionable.userNotificationsEventBroadcaster <! Subscribe actionable.userNotificationsPersistanceProcessor
-    
-    actionable.actionItemToSessionTranlator <! debugger system "translator"
-    actionable.userNotificationsAggregateProcessor <! debugger system "aggregate"
-    actionable.userNotificationsEventBroadcaster <! debugger system "event"
-    actionable.userNotificationsErrorBroadcaster <! debugger system "error"
+
+    //actionable.ActionItemEventBroadcaster <! Subscribe actionable.actionItemPersistanceProcessor
+    actionable.ActionItemEventBroadcaster <! Subscribe actionable.ActionItemToSessionTranlator    
+
+    //actionable.UserNotificationsEventBroadcaster <! Subscribe actionable.userNotificationsPersistanceProcessor
+        
+    actionable.UserNotificationsEventBroadcaster <! debugger system "event"
+    actionable.UserNotificationsErrorBroadcaster <! debugger system "error"
     
     actionable

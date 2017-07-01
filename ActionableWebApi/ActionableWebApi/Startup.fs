@@ -1,6 +1,6 @@
 namespace ActionableWebApi
 
-open Actionable.Agents.Composition
+//open Actionable.Agents.Composition
 
 open Owin
  
@@ -63,10 +63,14 @@ type Startup () =
         app.UseOAuthBearerTokens OAuthOptions
         ()
 
-    let configureServices (config:HttpConfiguration) =
+    let configureServices (config:HttpConfiguration) = 
          config.Services.Replace(
             typeof<System.Web.Http.Dispatcher.IHttpControllerActivator>,
-            ActionableWebApi.CompositRoot())
+            ActionableWebApi.CompositRoot (
+                null :> Actionable.Actors.Initialization.ActionableActors, 
+                (fun x -> []),
+                (fun x -> None)
+            ))
 
     member this.Configuration (app:IAppBuilder) =
         //System.Diagnostics.Debugger.Break ()   

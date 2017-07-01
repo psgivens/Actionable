@@ -6,7 +6,7 @@ open Newtonsoft.Json
 open Actionable.Data
 
 type UserNotificationReadModel = {
-    Id: System.Guid
+    Id: int
     Type: string
     Message: string
     Status: int

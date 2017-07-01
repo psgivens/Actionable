@@ -79,16 +79,18 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="InMemoryPersistance.fs" />
     <Compile Include="EventSourceGherkin.fs" />
-    <Compile Include="ActionableGherkin.fs" />
-    <Compile Include="ActionableGherkinTests.fs" />
-    <Compile Include="NotificationActorsTests.fs" />
+    <Compile Include="ActionItemGherkin.fs" />
+    <Compile Include="UserNotificationsGherkin.fs" />
+    <Compile Include="DomainActionItemTests.fs" />
+    <Compile Include="DomainNotificationsTests.fs" />
+    <Compile Include="ActorsActionItemTests.fs" />
+    <Compile Include="ActorsNotificationTests.fs" />
     <Content Include="App.config" />
     <Content Include="packages.config" />
     <None Include="References.fsx" />
     <None Include="ScriptSetup.fsx" />
     <None Include="Practice.fsx" />
     <None Include="GreetingActorExample.fsx" />
-    <Compile Include="ActionsActorsTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Akka">
