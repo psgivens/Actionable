@@ -1,9 +1,9 @@
 ﻿module Actionable.Domain.ActionItemModule
 
-type ActionItem = { Fields: Map<string,string> }
+type ActionItem = { UserId:string; Id: System.Guid; Fields: Map<string,string> }
     
 type ActionItemCommand = 
-    | Create of Map<string,string>
+    | Create of string * System.Guid * Map<string,string>
     | Update of Map<string,string>
     | Delete
     | Complete
@@ -26,7 +26,11 @@ type InvalidEvent (state:ActionItemState, event: ActionItemEvent) =
 
 let handle state command = 
     match state, command with
-    | DoesNotExist, Create (fields) -> Created ({Fields=fields|>Map.add "actionable.status" "0"})
+    | DoesNotExist, Create (userId, id, fields) -> 
+        {ActionItem.UserId=userId; 
+         Id=id; 
+         Fields=fields|>Map.add "actionable.status" "0"}
+        |> Created
     | State(item), Update (fields) -> 
         // TODO: Verify that key/value make sense
 

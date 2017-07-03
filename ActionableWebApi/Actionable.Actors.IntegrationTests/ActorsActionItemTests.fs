@@ -1,4 +1,4 @@
-﻿module ``2 - Actors - Action Items Tests``
+﻿module Actors_ActionItems
 
 open Xunit
 
@@ -64,14 +64,15 @@ let ``Create, retrieve, update, and delete an item`` () =
             (TransId.create ())
             (streamId) 
             (Version.box 0s) 
-            (["actionable.title",title;
+            (("sampleuserid", StreamId.unbox streamId, 
+              ["actionable.title",title;
                 "actionable.description", description] 
-                |> Map.ofList
-                |> ActionItemCommand.Create)
+                |> Map.ofList)
+             |> ActionItemCommand.Create)
 
     waiter.Wait 60.0
 
-    let results = fetchActionItem "sampleuserid"
+    let results = fetchActionItems "sampleuserid"
     let item = 
         match results |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
             with
@@ -92,7 +93,7 @@ let ``Create, retrieve, update, and delete an item`` () =
                 |> ActionItemCommand.Update)
 
     waiter.Wait 60.0
-    let results' = fetchActionItem "sampleuserid"
+    let results' = fetchActionItems "sampleuserid"
     let item' = 
         match results' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
             with
@@ -111,7 +112,7 @@ let ``Create, retrieve, update, and delete an item`` () =
             (ActionItemCommand.Delete)
                 
     waiter.Wait 60.0
-    let results'' = fetchActionItem "sampleuserid"
+    let results'' = fetchActionItems "sampleuserid"
     let item''' = results'' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
     
     Assert.Equal (item''', None)

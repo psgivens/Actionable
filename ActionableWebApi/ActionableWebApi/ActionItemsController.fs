@@ -20,8 +20,11 @@ open System.Web.SessionState
 type ActionItemsQueryResponse () =
     [<DefaultValue>] val mutable Results : ActionItemReadModel list
     [<DefaultValue>] val mutable Time : string
+type ActionItemQueryResponse () =
+    [<DefaultValue>] val mutable Result : ActionItemReadModel 
+    [<DefaultValue>] val mutable Time : string
                 
-type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItems:string->ActionItemReadModel list) =
+type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItem:System.Guid->ActionItemReadModel option, fetchActionItems:string->ActionItemReadModel list) =
     inherit ApiController ()
     
     let (|GuidPattern|_|) guid = 
@@ -41,12 +44,14 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItems
                     (Version.box 0s)
                     (Update(item.Fields))
             | _ ->
+                let streamId = StreamId.create ()
+                let userId = this.User.Identity.GetUserId()
                 envelopWithDefaults 
-                    (UserId.box <| this.User.Identity.GetUserId()) 
+                    (UserId.box <| userId) 
                     (TransId.create ()) 
                     (StreamId.create ())
                     (Version.box 0s)
-                    (Create(item.Fields))
+                    (Create(userId, streamId |> StreamId.unbox, item.Fields))
 
         post envelope
         this.Request.CreateResponse(
@@ -55,7 +60,7 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItems
                 Message = "TODO: Respond with transaction Id",
                 Time = DateTimeOffset.Now.ToString("o")))
 
-    member this.Delete (item: DeleteActionItemRendition) =
+    member this.Delete (item: ActionItemIdRendition) =
         let envelope =
             envelopWithDefaults
                 (UserId.box <| this.User.Identity.GetUserId())        
@@ -79,3 +84,11 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItems
                 Results = fetchActionItems (this.User.Identity.GetUserId()),
                 Time = DateTimeOffset.Now.ToString("o")))
        
+    member this.Get (item: ActionItemIdRendition) =
+        this.Request.CreateResponse(
+            HttpStatusCode.OK,
+            ActionItemQueryResponse (
+                Result = ((Guid.Parse(item.ActionItemId) |> fetchActionItem) |> Option.get),
+                Time = DateTimeOffset.Now.ToString("o")))
+        
+

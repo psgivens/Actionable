@@ -14,6 +14,7 @@ open InMemoryPersistance
 open Actionable.Domain.ActionItemModule
 open Actionable.Domain.UserNotificationsModule
 
+open Actionable.Domain.ClientCommands
 //open Actionable.Domain.Persistance.EventSourcing.ActionItemEF
 
 module HttpTest = 
@@ -42,10 +43,10 @@ type TestUser () =
             with get () = System.Security.Claims.ClaimsIdentity([claim]) :> System.Security.Principal.IIdentity
         member this.IsInRole roleName = true
 
-type ``3 - Web - Integration Tests``() = 
+type ``Web - Integration Tests``() = 
     let testUser = TestUser()
     let actionable = HttpTest.actionable
-    let compositRoot = CompositRoot (actionable, InMemoryPersistance.fetchActionItem, InMemoryPersistance.fetchUserNotifications)
+    let compositRoot = CompositRoot (actionable, InMemoryPersistance.fetchActionItem, InMemoryPersistance.fetchActionItems, InMemoryPersistance.fetchUserNotifications)
     let requestMessage = new System.Net.Http.HttpRequestMessage ()
     let actionController = 
         (compositRoot :> IHttpControllerActivator).Create (
@@ -92,7 +93,10 @@ type ``3 - Web - Integration Tests``() =
         
         let nresult = notificationsController.Get ()
         let nresponse = HttpTest.unpack<ActionableWebApi.UserNotificationsQueryResponse> nresult
+        let payload = deserializeClientCommand <| nresponse.Results.Value.Head.Message
+        let id = (payload.data :?> GetActionItem).Id
 
+        let result = actionController.Get {ActionItemId=id.ToString ()}
         failwith "Not implemented"
         
         let result = actionController.Get ()

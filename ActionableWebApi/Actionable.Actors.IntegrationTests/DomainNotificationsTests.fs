@@ -1,4 +1,4 @@
-﻿module ``1 - Domain - Notifications Tests``
+﻿module Domain_Notifications
 
 open Xunit
 open Actionable.Actors.IntegrationTests.UserNotificationsGherkin

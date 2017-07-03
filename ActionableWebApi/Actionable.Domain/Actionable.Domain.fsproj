@@ -78,6 +78,7 @@
     <Compile Include="UserNotifications.fs" />
     <Content Include="packages.config" />
     <Content Include="App.config" />
+    <Compile Include="ClientCommands.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Reactive">
@@ -86,6 +87,10 @@
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

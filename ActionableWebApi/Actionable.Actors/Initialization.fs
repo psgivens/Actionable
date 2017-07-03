@@ -13,6 +13,7 @@ open Actionable.Domain
 open Actionable.Domain.ActionItemModule
 open Actionable.Domain.UserNotificationsModule
 open Actionable.Domain.Infrastructure
+open Actionable.Domain.ClientCommands
 
 [<AllowNullLiteral>]
 type ActionableActors 
@@ -109,12 +110,13 @@ type ActionableActors
         _actionItemToSessionTranlator <-     
             spawn system "actionItemToSessionTranslator" 
                 <| actorOf (fun (envelope:Envelope<ActionItemEvent>) ->
+                    let clientCmd = serializeClientCommand { 
+                        Actionable.Domain.ClientCommands.GetActionItem.Id = envelope.StreamId |> StreamId.unbox }
                     let cmd = 
                         envelope
                         |> repackage (fun actionItemEvent ->  
-                            (UserId.unbox envelope.UserId, 0, (sprintf "{Command=GetActionItem,Id=%s}" (envelope.Id.ToString())))
-                            |> UserNotificationsCommand.AppendMessage )
-
+                            (UserId.unbox envelope.UserId, 0, clientCmd)
+                            |> UserNotificationsCommand.AppendMessage)
                     cmd |> _userNotificationsAggregateProcessor.Tell
                 )
         _actionItemToSessionTranlator <! Subscribe _userNotificationsAggregateProcessor

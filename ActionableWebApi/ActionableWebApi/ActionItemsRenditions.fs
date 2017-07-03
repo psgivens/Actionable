@@ -16,7 +16,7 @@ type ResponseCode () =
     [<DefaultValue>] val mutable Time : string
      
 [<CLIMutable>]
-type DeleteActionItemRendition = {
+type ActionItemIdRendition = {
     ActionItemId: string
 }
 

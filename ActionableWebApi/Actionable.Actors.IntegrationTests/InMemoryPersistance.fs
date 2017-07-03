@@ -37,7 +37,16 @@ let persistActionItem userId (StreamId.Id(streamId)) state =
         do! async.Zero ()
     }
 
-let fetchActionItem userId :ActionItemReadModel list= 
+let fetchActionItem itemId :ActionItemReadModel option= 
+    
+    match actionItems |> Map.tryFind itemId with
+    | Some(value) ->
+        Some({ ActionItemReadModel.UserId = value.UserId
+               Fields = value.Fields
+               Id = value.Id })
+    | _ -> None
+
+let fetchActionItems userId :ActionItemReadModel list= 
     actionItems 
     |> Map.map (fun key value ->
         {

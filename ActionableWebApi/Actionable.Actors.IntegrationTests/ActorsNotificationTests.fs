@@ -1,4 +1,4 @@
-﻿module ``2 - Actors - Notifications Tests``
+﻿module Actors_UserNotifications 
 
 open Xunit
 
@@ -62,10 +62,11 @@ let ``Create item, get noti., ack noti, no noti.`` () =
             (TransId.create ())
             (streamId) 
             (Version.box 0s) 
-            (["actionable.title",title;
+            (("sampleuserid", StreamId.unbox streamId, 
+              ["actionable.title",title;
                 "actionable.description", description] 
-                |> Map.ofList
-                |> ActionItemCommand.Create)
+                |> Map.ofList)
+             |> ActionItemCommand.Create)
 
     waiter.Wait 10.0
 

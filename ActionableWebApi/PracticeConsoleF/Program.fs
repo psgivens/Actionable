@@ -8,6 +8,22 @@ open Akka.FSharp
 open Actionable.Actors 
 open Actionable.Actors.Composition
 
+open Newtonsoft.Json
+
+type ActionCommand = {Id:System.Guid}
+type Payload = { command:string; body:obj }
+
+let serialize (cmd:System.Object) =    
+    JsonConvert.SerializeObject { 
+        Payload.command = (cmd.GetType ()).Name
+        body = cmd
+        }
+
+type NotificationCommand = 
+    | Execute of ActionCommand
+    | GetActionItem of System.Guid   
+    | GetAllActionItems
+
 type Greet (who:string) = 
     member this.Who = who
 
@@ -29,6 +45,21 @@ type SUserId = SUserId of String with
 [<EntryPoint>]
 let main argv = 
     let guid = (System.Guid.NewGuid())
+
+    let acmd = { ActionCommand.Id = guid }
+    let avalue = JsonConvert.SerializeObject acmd
+    
+    let aval = serialize acmd
+
+    let dval = JsonConvert.DeserializeObject<Payload> aval
+    let x = dval.body
+    let y = JsonConvert.DeserializeObject<ActionCommand> (x.ToString ())
+    let ecmd = NotificationCommand.Execute acmd
+    let evalue = JsonConvert.SerializeObject ecmd
+
+    let cmd = NotificationCommand.GetActionItem guid
+    let value = JsonConvert.SerializeObject cmd
+
     let v = SStreamId (guid)
     let y = SStreamId.unbox v
     let w = SUserId "foobar"

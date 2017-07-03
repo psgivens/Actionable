@@ -68,6 +68,7 @@ type Startup () =
             typeof<System.Web.Http.Dispatcher.IHttpControllerActivator>,
             ActionableWebApi.CompositRoot (
                 null :> Actionable.Actors.Initialization.ActionableActors, 
+                (fun x -> None),
                 (fun x -> []),
                 (fun x -> None)
             ))

@@ -1,4 +1,4 @@
-﻿module ``1 - Domain - Action Items Tests``
+﻿module Domain_ActionItems
 
 open Xunit
 open Actionable.Actors.IntegrationTests.ActionItemGherkin
@@ -6,7 +6,9 @@ open EventSourceGherkin
 open Actionable.Domain.ActionItemModule
 
 let existingItemState:Preconditions<ActionItemEvent,ActionItemState> = 
-    {   ActionItem.Fields = 
+    {   ActionItem.UserId = "sampleuser"
+        Id = System.Guid.NewGuid ()
+        Fields = 
             ["actionable.title","Doing things";
                 "actionable.description","Doing things is an important activity"]
             |> Map.ofList }
@@ -15,11 +17,14 @@ let existingItemState:Preconditions<ActionItemEvent,ActionItemState> =
 
 [<Fact>]
 let ``Create an action item`` () =
+    let sampleUserId = "sampleuserid"
+    let itemId = System.Guid.NewGuid ()
     Given(DoesNotExist |> Preconditions.State)
     |> When (
-        ["actionable.title","Doing things";
-            "actionable.description","Doing things is an important activity"]
-        |> Map.ofList
+        (sampleUserId, itemId,
+            ["actionable.title","Doing things";
+                "actionable.description","Doing things is an important activity"]
+            |> Map.ofList)
         |> ActionItemCommand.Create
         |> Command)
     |> Then {
@@ -30,7 +35,7 @@ let ``Create an action item`` () =
                         "actionable.description","Doing things is an important activity";
                         "actionable.status","0"]
                     |> Map.ofList
-                    |> fun map -> { Fields=map }
+                    |> fun map -> { UserId=sampleUserId; Id=itemId; Fields=map }
                     |> ActionItemEvent.Created   ]
                 |> Some
             State = None
