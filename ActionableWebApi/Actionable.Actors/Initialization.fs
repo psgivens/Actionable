@@ -20,6 +20,7 @@ type ActionableActors
         (system:ActorSystem, 
          actionItemEventStore:IEventStore<Envelope<ActionItemEvent>>, 
          notificationEventStore:IEventStore<Envelope<UserNotificationsEvent>>,
+         getUserNotificationStreamId:UserId -> StreamId,
          persistItems:UserId -> StreamId -> ActionItemState -> Async<unit>,
          persistUserNotifications:UserId -> StreamId -> UserNotificationsState -> Async<unit>) as actors =
     
@@ -112,9 +113,10 @@ type ActionableActors
                 <| actorOf (fun (envelope:Envelope<ActionItemEvent>) ->
                     let clientCmd = serializeClientCommand { 
                         Actionable.Domain.ClientCommands.GetActionItem.Id = envelope.StreamId |> StreamId.unbox }
+                    let streamId = getUserNotificationStreamId envelope.UserId
                     let cmd = 
                         envelope
-                        |> repackage (fun actionItemEvent ->  
+                        |> repackage streamId (fun actionItemEvent ->  
                             (UserId.unbox envelope.UserId, 0, clientCmd)
                             |> UserNotificationsCommand.AppendMessage)
                     cmd |> _userNotificationsAggregateProcessor.Tell

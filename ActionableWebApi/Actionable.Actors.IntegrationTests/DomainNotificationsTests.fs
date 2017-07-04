@@ -16,7 +16,7 @@ let existingItemState:Preconditions<UserNotificationsEvent,UserNotificationsStat
     |> Preconditions.State
 
 [<Fact>]
-let ``1. Create a notification`` () =
+let ``1_Create a notification`` () =
     let message = "message to user"
     Given(UserNotificationsState.DoesNotExist |> Preconditions.State)
     |> When (
@@ -34,7 +34,7 @@ let ``1. Create a notification`` () =
         }
 
 [<Fact>]
-let ``2. Acknowledge a notification`` () =
+let ``2_Acknowledge a notification`` () =
     Given(existingItemState)
     |> When (0 |> UserNotificationsCommand.AcknowledgeMessage |> Command)
     |> Then {

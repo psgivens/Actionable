@@ -12,6 +12,7 @@ open Actionable.Data
 
 //open Composition
 open Actionable.Domain.ActionItemModule
+open Actionable.Domain.ActionItemsQueryResponse
 open Actionable.Domain.Infrastructure
 
 open Actionable.Domain.Persistance.EventSourcing.ActionItemEF
@@ -65,7 +66,7 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItem:
             envelopWithDefaults
                 (UserId.box <| this.User.Identity.GetUserId())        
                 (TransId.create ()) 
-                (StreamId.box <| Guid.Parse(item.ActionItemId))
+                (StreamId.box <| item.GetActionItemId ())
                 (Version.box 0s)
                 (Delete)
 
@@ -88,7 +89,7 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItem:
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             ActionItemQueryResponse (
-                Result = ((Guid.Parse(item.ActionItemId) |> fetchActionItem) |> Option.get),
+                Result = ((item.GetActionItemId () |> fetchActionItem) |> Option.get),
                 Time = DateTimeOffset.Now.ToString("o")))
         
 

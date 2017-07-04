@@ -73,6 +73,7 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ActionableDbContext.fs" />
     <Compile Include="ActionItemEventStore.fs" />
     <Compile Include="UserNotificationEventStore.fs" />
     <Content Include="packages.config" />

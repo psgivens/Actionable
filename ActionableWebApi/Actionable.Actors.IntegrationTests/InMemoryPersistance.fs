@@ -3,6 +3,7 @@
 open Actionable.Domain.Infrastructure
 open Actionable.Domain
 open Actionable.Domain.ActionItemModule
+open Actionable.Domain.ActionItemsQueryResponse
 
 open Actionable.Actors 
 open Actionable.Actors.Initialization

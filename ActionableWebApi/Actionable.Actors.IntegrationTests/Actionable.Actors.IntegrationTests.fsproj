@@ -91,6 +91,7 @@
     <None Include="ScriptSetup.fsx" />
     <None Include="Practice.fsx" />
     <None Include="GreetingActorExample.fsx" />
+    <Compile Include="ActionItemQueryTypeTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Akka">

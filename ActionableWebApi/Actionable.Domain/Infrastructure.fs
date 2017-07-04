@@ -66,10 +66,10 @@ module Envelope =
             (DateTimeOffset.Now) 
             item
 
-    let repackage<'a,'b> (func:'a->'b) (envelope:Envelope<'a>) ={
+    let repackage<'a,'b> streamId (func:'a->'b) (envelope:Envelope<'a>) ={
         Id = envelope.Id
         UserId = envelope.UserId
-        StreamId = envelope.StreamId
+        StreamId = streamId
         Version = envelope.Version
         Created = envelope.Created
         Item = func envelope.Item

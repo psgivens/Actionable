@@ -11,6 +11,7 @@ open Akka.FSharp
 open Actionable.Actors.Composition
 open InMemoryPersistance
 
+open Actionable.Domain.Infrastructure
 open Actionable.Domain.ActionItemModule
 open Actionable.Domain.UserNotificationsModule
 
@@ -23,11 +24,14 @@ module HttpTest =
         content.Value :?> 'TType
 
     let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
+    let testUserStreamId = StreamId.create ()
+    let getUserNotificationStreamId userId = testUserStreamId
     let actionable = 
         composeSystem 
             (system, 
              MemoryStore<ActionItemEvent> (), 
              MemoryStore<UserNotificationsEvent> (),
+             getUserNotificationStreamId,
              persistActionItem,
              persistUserNotification
              )
@@ -46,7 +50,13 @@ type TestUser () =
 type ``Web - Integration Tests``() = 
     let testUser = TestUser()
     let actionable = HttpTest.actionable
-    let compositRoot = CompositRoot (actionable, InMemoryPersistance.fetchActionItem, InMemoryPersistance.fetchActionItems, InMemoryPersistance.fetchUserNotifications)
+    let compositRoot = 
+        CompositRoot 
+            (actionable, 
+             HttpTest.getUserNotificationStreamId,
+             InMemoryPersistance.fetchActionItem, 
+             InMemoryPersistance.fetchActionItems, 
+             InMemoryPersistance.fetchUserNotifications)
     let requestMessage = new System.Net.Http.HttpRequestMessage ()
     let actionController = 
         (compositRoot :> IHttpControllerActivator).Create (
@@ -93,10 +103,24 @@ type ``Web - Integration Tests``() =
         
         let nresult = notificationsController.Get ()
         let nresponse = HttpTest.unpack<ActionableWebApi.UserNotificationsQueryResponse> nresult
-        let payload = deserializeClientCommand <| nresponse.Results.Value.Head.Message
-        let id = (payload.data :?> GetActionItem).Id
+        let notification = nresponse.Results.Value.Head       
+        let payload = deserializeClientCommand <| notification.Message
+        let actionItemId = (payload.data :?> GetActionItem).Id
 
-        let result = actionController.Get {ActionItemId=id.ToString ()}
+        let result = actionController.Get {ActionItemId=actionItemId.ToString ()}
+
+        // TODO: Verify action item result
+
+        let npostResult = 
+            notificationsController.Post 
+                { UserNotificationIdRendition.UserNotificationId = notification.Id.ToString ()}
+            |> fun task -> task.Result
+
+        System.Threading.Thread.Sleep 2000  
+        
+        let nresult2 = notificationsController.Get ()
+        let nresponse2 = HttpTest.unpack<ActionableWebApi.UserNotificationsQueryResponse> nresult2
+
         failwith "Not implemented"
         
         let result = actionController.Get ()

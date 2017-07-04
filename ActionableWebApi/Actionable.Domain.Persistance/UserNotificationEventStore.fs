@@ -1,9 +1,11 @@
 ﻿module Actionable.Domain.Persistance.EventSourcing.UserNotificationEF
 
+open Actionable.Domain.Persistance.Core
 open Actionable.Domain.Infrastructure
 open Actionable.Domain.UserNotificationsModule
 open Newtonsoft.Json
 open Actionable.Data
+
 
 type UserNotificationReadModel = {
     Id: int
@@ -11,6 +13,30 @@ type UserNotificationReadModel = {
     Message: string
     Status: int
     }
+
+type Actionable.Data.ActionableDbContext with 
+    member this.GetUserNotificationStream userId =
+        async {
+            use context = new ActionableDbContext()
+            let streamIds = 
+                query {
+                    for mapping in context.UserNotificationMappings do
+                    where (mapping.UserId = userId)
+                    select mapping.UserNotificationStreamId } 
+                |> Seq.toList
+            match streamIds with
+            | [streamId] -> return streamId 
+            | [] ->
+                let streamId = System.Guid.NewGuid () 
+                context.UserNotificationMappings.Add(
+                    UserToNotificationMapping(
+                        UserId=userId,
+                        UserNotificationStreamId=streamId))
+                |> ignore
+                do! context |> saveChanges
+                return streamId
+            | _ -> return failwith "A user cannot have more than one user notification stream"                
+        }
 
 //
 //

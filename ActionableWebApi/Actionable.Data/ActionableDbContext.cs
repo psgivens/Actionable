@@ -7,8 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Actionable.Data
-{    
+namespace Actionable.Data {
     public class ActionableDbContext : DbContext {
         static ActionableDbContext() {
             Database.SetInitializer<ActionableDbContext>(new ActionableDbInitializer());
@@ -26,5 +25,6 @@ namespace Actionable.Data
         public virtual DbSet<TaskTypeDefinition> TaskTypeDefinitions { get; set; }
         public virtual DbSet<FieldDefinition> FieldDefinitions { get; set; }
         public virtual DbSet<TaskTypeInstance> TaskInstances { get; set; }
+        public virtual DbSet<UserToNotificationMapping> UserNotificationMappings { get; set; }
     }
 }

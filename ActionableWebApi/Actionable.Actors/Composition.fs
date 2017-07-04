@@ -26,9 +26,10 @@ let composeSystem
        (system:ActorSystem, 
         actionItemEventStore:IEventStore<Envelope<ActionItemEvent>>, 
         notificationsEventStore:IEventStore<Envelope<UserNotificationsEvent>>, 
+        getUserNotificationStreamId:UserId -> StreamId,
         persistItem:UserId -> StreamId -> ActionItemState -> Async<unit>,
         persistUserNotifications:UserId -> StreamId -> UserNotificationsState -> Async<unit>) =
-    let actionable = ActionableActors (system, actionItemEventStore, notificationsEventStore, persistItem, persistUserNotifications)
+    let actionable = ActionableActors (system, actionItemEventStore, notificationsEventStore, getUserNotificationStreamId, persistItem, persistUserNotifications)
 
     //actionable.ActionItemEventBroadcaster <! Subscribe actionable.actionItemPersistanceProcessor
     actionable.ActionItemEventBroadcaster <! Subscribe actionable.ActionItemToSessionTranlator    

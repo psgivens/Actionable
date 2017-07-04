@@ -16,9 +16,9 @@ type ResponseCode () =
     [<DefaultValue>] val mutable Time : string
      
 [<CLIMutable>]
-type ActionItemIdRendition = {
-    ActionItemId: string
-}
+type ActionItemIdRendition = 
+    { ActionItemId: string } with
+    member this.GetActionItemId () = Guid.Parse this.ActionItemId
 
 [<CLIMutable>]
 type AddActionItemRendition = {
@@ -31,4 +31,9 @@ type FieldRendition = {
     Key: string
     Value: string
 }
+    
+[<CLIMutable>]
+type UserNotificationIdRendition = 
+    { UserNotificationId: string } with
+    member this.GetId () = Int32.Parse this.UserNotificationId
 

@@ -19,11 +19,14 @@ open InMemoryPersistance
 open Actionable.Actors.Composition
 
 let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
+let testUserStreamId = StreamId.create ()
+let getUserNotificationStreamId userId = testUserStreamId
 let actionable = 
     composeSystem 
         (system, 
          MemoryStore<ActionItemEvent> (), 
          MemoryStore<UserNotificationsEvent> (),
+         getUserNotificationStreamId,
          persistActionItem,
          persistUserNotification
          )

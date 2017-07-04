@@ -75,6 +75,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Infrastructure.fs" />
     <Compile Include="ActionItem.fs" />
+    <Compile Include="ActionItemsQueryResponse.fs" />
     <Compile Include="UserNotifications.fs" />
     <Content Include="packages.config" />
     <Content Include="App.config" />

@@ -24,6 +24,7 @@ type UserNotificationsQueryResponse () =
                 
 type UserNotificationsController 
         ( post:Envelope<UserNotificationsCommand>->unit, 
+          getUserNotificationStreamId:UserId -> StreamId,
           fetchNotifications:string->UserNotificationReadModel list option) =
     inherit ApiController ()
     
@@ -32,48 +33,30 @@ type UserNotificationsController
         | (true, id) -> Some(id)
         | _ -> Option.None
     interface IRequiresSessionState
-//    member this.Post (item: AddActionItemRendition) =
-//        // TODO Parse Int16.Parse(item.Status)
-//        let envelope = 
-//            match item.Id with 
-//            | GuidPattern id ->
-//                envelopWithDefaults 
-//                    (UserId.box <| this.User.Identity.GetUserId()) 
-//                    (TransId.create ()) 
-//                    (StreamId.box id) 
-//                    (Version.box 0s)
-//                    (Update(item.Fields))
-//            | _ ->
-//                envelopWithDefaults 
-//                    (UserId.box <| this.User.Identity.GetUserId()) 
-//                    (TransId.create ()) 
-//                    (StreamId.create ())
-//                    (Version.box 0s)
-//                    (Create(item.Fields))
-//
-//        post envelope
-//        this.Request.CreateResponse(
-//            HttpStatusCode.OK,
-//            ResponseCode(
-//                Message = "TODO: Respond with transaction Id",
-//                Time = DateTimeOffset.Now.ToString("o")))
-//
-//    member this.Delete (item: DeleteActionItemRendition) =
-//        let envelope =
-//            envelopWithDefaults
-//                (UserId.box <| this.User.Identity.GetUserId())        
-//                (TransId.create ()) 
-//                (StreamId.box <| Guid.Parse(item.ActionItemId))
-//                (Version.box 0s)
-//                (Delete)
-//
-//        post envelope
-//        this.Request.CreateResponse(
-//            HttpStatusCode.OK,
-//            ResponseCode(
-//                Message = "TODO: Respond with transaction Id",
-//                Time = DateTimeOffset.Now.ToString("o")))
 
+    member this.Post (item: UserNotificationIdRendition) =
+        async {
+            let itemId = item.GetId ()
+            let userId = this.User.Identity.GetUserId()
+            use context = new ActionableDbContext()
+            let! streamId = async {
+                return getUserNotificationStreamId <| UserId.box userId }
+            
+            let envelope = 
+                envelopWithDefaults
+                    (UserId.box userId)        
+                    (TransId.create ()) 
+                    (streamId)
+                    (Version.box 0s)
+                    (UserNotificationsCommand.AcknowledgeMessage itemId)
+            envelope |> post
+
+            return this.Request.CreateResponse(
+                HttpStatusCode.OK,
+                ResponseCode(
+                    Message = "TODO: Respond with transaction Id",
+                    Time = DateTimeOffset.Now.ToString("o")))
+        } |> Async.StartAsTask
 
     member this.Get () =
         this.Request.CreateResponse(

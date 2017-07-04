@@ -1,6 +1,7 @@
 namespace ActionableWebApi
 
 //open Actionable.Agents.Composition
+open Actionable.Domain.Infrastructure
 
 open Owin
  
@@ -68,6 +69,7 @@ type Startup () =
             typeof<System.Web.Http.Dispatcher.IHttpControllerActivator>,
             ActionableWebApi.CompositRoot (
                 null :> Actionable.Actors.Initialization.ActionableActors, 
+                (fun x -> StreamId.create ()),
                 (fun x -> None),
                 (fun x -> []),
                 (fun x -> None)

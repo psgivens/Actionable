@@ -18,11 +18,14 @@ open Actionable.Actors.Composition
 open InMemoryPersistance
 
 let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
+let testUserStreamId = StreamId.create ()
+let getUserNotificationStreamId userId = testUserStreamId
 let actionable = 
     composeSystem 
         (system, 
          MemoryStore<ActionItemEvent> (), 
          MemoryStore<UserNotificationsEvent> (),
+         getUserNotificationStreamId,
          persistActionItem,
          persistUserNotification)
          // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
@@ -48,7 +51,7 @@ type SignalWaiter (name, system) =
         member x.Dispose() = signal.Dispose ()
         
 [<Fact>]
-let ``Create item, get noti., ack noti, no noti.`` () =  
+let ``Create item, get notif, ack noti, no notif`` () =  
     use waiter = new SignalWaiter ("crudWaiter", system)    
     actionable.UserNotificationsPersisterEventBroadcaster <! Subscribe waiter.Actor
 
