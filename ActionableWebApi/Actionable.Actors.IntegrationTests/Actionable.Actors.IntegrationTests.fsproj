@@ -77,7 +77,7 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="InMemoryPersistance.fs" />
+    <Compile Include="InMemoryPersistence.fs" />
     <Compile Include="EventSourceGherkin.fs" />
     <Compile Include="ActionItemGherkin.fs" />
     <Compile Include="UserNotificationsGherkin.fs" />
