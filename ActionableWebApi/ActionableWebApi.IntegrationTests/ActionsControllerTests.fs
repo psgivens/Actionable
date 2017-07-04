@@ -9,7 +9,7 @@ open Akka.Actor
 open Akka.FSharp
 
 open Actionable.Actors.Composition
-open InMemoryPersistance
+open Actionable.Actors.IntegrationTests.Perisistance
 
 open Actionable.Domain.Infrastructure
 open Actionable.Domain.ActionItemModule
@@ -26,14 +26,15 @@ module HttpTest =
     let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
     let testUserStreamId = StreamId.create ()
     let getUserNotificationStreamId userId = testUserStreamId
+    let inMemoryPersistence = InMemoryPersistence ()
     let actionable = 
         composeSystem 
             (system, 
              MemoryStore<ActionItemEvent> (), 
              MemoryStore<UserNotificationsEvent> (),
              getUserNotificationStreamId,
-             persistActionItem,
-             persistUserNotification
+             inMemoryPersistence.PersistActionItem,
+             inMemoryPersistence.PersistUserNotification
              )
 
 // 
@@ -54,9 +55,9 @@ type ``Web - Integration Tests``() =
         CompositRoot 
             (actionable, 
              HttpTest.getUserNotificationStreamId,
-             InMemoryPersistance.fetchActionItem, 
-             InMemoryPersistance.fetchActionItems, 
-             InMemoryPersistance.fetchUserNotifications)
+             HttpTest.inMemoryPersistence.GetActionItem, 
+             HttpTest.inMemoryPersistence.GetActionItems, 
+             HttpTest.inMemoryPersistence.GetUserNotifications)
     let requestMessage = new System.Net.Http.HttpRequestMessage ()
     let actionController = 
         (compositRoot :> IHttpControllerActivator).Create (
@@ -90,7 +91,8 @@ type ``Web - Integration Tests``() =
         Assert.True true
 
     [<Fact>]
-    member this.``Create item, get noti, get item, no noti`` () =
+    member this.``Create item, get noti, ack noit, no noti`` () =
+        (***** Create item *****)
         let title = "Hibidy jibity " + (System.Guid.NewGuid ()).ToString()
         let description = "have fun"
         let description' = "have the most fun"
@@ -101,16 +103,16 @@ type ``Web - Integration Tests``() =
         }
         System.Threading.Thread.Sleep 2000       
         
+        (***** Get notification ****)
         let nresult = notificationsController.Get ()
         let nresponse = HttpTest.unpack<ActionableWebApi.UserNotificationsQueryResponse> nresult
-        let notification = nresponse.Results.Value.Head       
+        let notification = nresponse.Results.Value.Head
         let payload = deserializeClientCommand <| notification.Message
-        let actionItemId = (payload.data :?> GetActionItem).Id
+        let actionItemId = (payload.data :?> ActionItemUpdated).Id
 
-        let result = actionController.Get {ActionItemId=actionItemId.ToString ()}
+        Assert.Equal (0, notification.Status)
 
-        // TODO: Verify action item result
-
+        (***** Acknowledge notification *****)
         let npostResult = 
             notificationsController.Post 
                 { UserNotificationIdRendition.UserNotificationId = notification.Id.ToString ()}
@@ -118,41 +120,10 @@ type ``Web - Integration Tests``() =
 
         System.Threading.Thread.Sleep 2000  
         
+        (***** Verify notification acknowledgement *****)
         let nresult2 = notificationsController.Get ()
         let nresponse2 = HttpTest.unpack<ActionableWebApi.UserNotificationsQueryResponse> nresult2
+        let notification2 = nresponse2.Results.Value.Head
 
-        failwith "Not implemented"
-        
-        let result = actionController.Get ()
-        let response = HttpTest.unpack<ActionableWebApi.ActionItemsQueryResponse> result
-        match response.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
-            with
-            | None -> failwith <| sprintf "item '%s' was not found" title
-            | Some item -> 
-                let ident = item.Id
-                Assert.Equal (item.Fields.["actionable.description"], description)
-        
-                ignore <| actionController.Post {
-                    Id = item.Id.ToString ()
-                    Fields = 
-                        [("actionable.title", title);("actionable.description",description')] 
-                        |> Map.ofList
-                    Date = System.DateTimeOffset.Now.ToString ()
-                } 
-
-                System.Threading.Thread.Sleep 2000
-                let result' = actionController.Get ()
-                let response' = HttpTest.unpack<ActionableWebApi.ActionItemsQueryResponse> result'
-                match response'.Results |> List.tryFind (fun r -> r.Fields.["actionable.title"] = title)
-                    with 
-                    | None -> failwith "Cannot find item"
-                    | Some item' ->
-                        Assert.Equal (ident, item'.Id)
-                        Assert.Equal (description', item'.Fields.["actionable.description"])
-        
-        Assert.True true
-
-
-
-
+        Assert.Equal (1, notification2.Status)
 

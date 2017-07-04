@@ -15,19 +15,20 @@ open Actionable.Actors
 open Actionable.Actors.Initialization
 open Actionable.Actors.Composition
 
-open InMemoryPersistance
+open Actionable.Actors.IntegrationTests.Perisistance
 
 let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
 let testUserStreamId = StreamId.create ()
 let getUserNotificationStreamId userId = testUserStreamId
+let inMemoryPersistence = InMemoryPersistence ()
 let actionable = 
     composeSystem 
         (system, 
          MemoryStore<ActionItemEvent> (), 
          MemoryStore<UserNotificationsEvent> (),
          getUserNotificationStreamId,
-         persistActionItem,
-         persistUserNotification)
+         inMemoryPersistence.PersistActionItem,
+         inMemoryPersistence.PersistUserNotification)
          // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
 
 open Actionable.Actors.Infrastructure
@@ -73,8 +74,8 @@ let ``Create item, get notif, ack noti, no notif`` () =
 
     waiter.Wait 10.0
 
-    let notifications = fetchUserNotifications "sampleuserid"
-    let notifications = fetchUserNotifications "sampleuserid"
+    let notifications = inMemoryPersistence.GetUserNotifications "sampleuserid"
+    let notifications = inMemoryPersistence.GetUserNotifications "sampleuserid"
     let notification = 
         match notifications with 
         | Some ([n]) -> n
@@ -84,13 +85,13 @@ let ``Create item, get notif, ack noti, no notif`` () =
         <! envelopWithDefaults 
             (UserId.box "sampleuserid")
             (TransId.create ())
-            (streamId) 
+            (testUserStreamId) 
             (Version.box 0s) 
             (UserNotificationsCommand.AcknowledgeMessage(notification.Id))
     
     waiter.Wait 10.0
 
-    let notifications = fetchUserNotifications "sampleuserid"
+    let notifications = inMemoryPersistence.GetUserNotifications "sampleuserid"
     match notifications with 
     | Some ([n]) when n.Status = 1 -> () 
     | _ -> failwith <| "Expected notifications to be cleared"

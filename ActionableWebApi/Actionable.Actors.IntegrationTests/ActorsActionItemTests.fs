@@ -15,20 +15,21 @@ open Actionable.Actors
 open Actionable.Actors.Initialization
 open Actionable.Actors.Composition
 
-open InMemoryPersistance
+open Actionable.Actors.IntegrationTests.Perisistance
 open Actionable.Actors.Composition
 
 let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
 let testUserStreamId = StreamId.create ()
 let getUserNotificationStreamId userId = testUserStreamId
+let inMemoryPersistence = InMemoryPersistence ()
 let actionable = 
     composeSystem 
         (system, 
          MemoryStore<ActionItemEvent> (), 
          MemoryStore<UserNotificationsEvent> (),
          getUserNotificationStreamId,
-         persistActionItem,
-         persistUserNotification
+         inMemoryPersistence.PersistActionItem,
+         inMemoryPersistence.PersistUserNotification
          )
           // Actionable.Domain.Persistance.EventSourcing.EF.persistActionItem)
 
@@ -75,7 +76,7 @@ let ``Create, retrieve, update, and delete an item`` () =
 
     waiter.Wait 60.0
 
-    let results = fetchActionItems "sampleuserid"
+    let results = inMemoryPersistence.GetActionItems "sampleuserid"
     let item = 
         match results |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
             with
@@ -96,7 +97,7 @@ let ``Create, retrieve, update, and delete an item`` () =
                 |> ActionItemCommand.Update)
 
     waiter.Wait 60.0
-    let results' = fetchActionItems "sampleuserid"
+    let results' = inMemoryPersistence.GetActionItems "sampleuserid"
     let item' = 
         match results' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
             with
@@ -115,7 +116,7 @@ let ``Create, retrieve, update, and delete an item`` () =
             (ActionItemCommand.Delete)
                 
     waiter.Wait 60.0
-    let results'' = fetchActionItems "sampleuserid"
+    let results'' = inMemoryPersistence.GetActionItems "sampleuserid"
     let item''' = results'' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
     
     Assert.Equal (item''', None)

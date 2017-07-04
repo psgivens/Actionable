@@ -32,7 +32,7 @@ let composeSystem
     let actionable = ActionableActors (system, actionItemEventStore, notificationsEventStore, getUserNotificationStreamId, persistItem, persistUserNotifications)
 
     //actionable.ActionItemEventBroadcaster <! Subscribe actionable.actionItemPersistanceProcessor
-    actionable.ActionItemEventBroadcaster <! Subscribe actionable.ActionItemToSessionTranlator    
+    actionable.ActionItemEventBroadcaster <! Subscribe actionable.ActionItemBroadcaster    
 
     //actionable.UserNotificationsEventBroadcaster <! Subscribe actionable.userNotificationsPersistanceProcessor
         

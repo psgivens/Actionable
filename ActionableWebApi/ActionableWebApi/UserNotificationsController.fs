@@ -25,7 +25,7 @@ type UserNotificationsQueryResponse () =
 type UserNotificationsController 
         ( post:Envelope<UserNotificationsCommand>->unit, 
           getUserNotificationStreamId:UserId -> StreamId,
-          fetchNotifications:string->UserNotificationReadModel list option) =
+          getNotifications:string->UserNotificationReadModel list option) =
     inherit ApiController ()
     
     let (|GuidPattern|_|) guid = 
@@ -62,6 +62,6 @@ type UserNotificationsController
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             UserNotificationsQueryResponse (
-                Results = fetchNotifications (this.User.Identity.GetUserId()),
+                Results = getNotifications (this.User.Identity.GetUserId()),
                 Time = DateTimeOffset.Now.ToString("o")))
        

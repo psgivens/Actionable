@@ -25,7 +25,10 @@ type ActionItemQueryResponse () =
     [<DefaultValue>] val mutable Result : ActionItemReadModel 
     [<DefaultValue>] val mutable Time : string
                 
-type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItem:System.Guid->ActionItemReadModel option, fetchActionItems:string->ActionItemReadModel list) =
+type ActionsController 
+        (post:Envelope<ActionItemCommand>->unit, 
+         getActionItem:System.Guid->ActionItemReadModel option, 
+         getActionItems:string->ActionItemReadModel list) =
     inherit ApiController ()
     
     let (|GuidPattern|_|) guid = 
@@ -82,14 +85,14 @@ type ActionsController (post:Envelope<ActionItemCommand>->unit, fetchActionItem:
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             ActionItemsQueryResponse (
-                Results = fetchActionItems (this.User.Identity.GetUserId()),
+                Results = getActionItems (this.User.Identity.GetUserId()),
                 Time = DateTimeOffset.Now.ToString("o")))
        
     member this.Get (item: ActionItemIdRendition) =
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             ActionItemQueryResponse (
-                Result = ((item.GetActionItemId () |> fetchActionItem) |> Option.get),
+                Result = ((item.GetActionItemId () |> getActionItem) |> Option.get),
                 Time = DateTimeOffset.Now.ToString("o")))
         
 

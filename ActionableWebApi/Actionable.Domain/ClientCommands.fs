@@ -2,7 +2,7 @@
 
 open System
 
-type GetActionItem = { Id:Guid }
+type ActionItemUpdated = { Id:Guid }
 
 open Newtonsoft.Json
 
@@ -17,7 +17,7 @@ let serializeClientCommand (cmd:System.Object) =
 let deserializeClientCommand (serialized:string) =    
     let payload = JsonConvert.DeserializeObject<ClientPayload> serialized
     match payload.command with
-    | "GetActionItem" -> 
+    | "ActionItemUpdated" -> 
         { payload with
-            data=JsonConvert.DeserializeObject<GetActionItem> (payload.data.ToString ()) }
+            data=JsonConvert.DeserializeObject<ActionItemUpdated> (payload.data.ToString ()) }
     | _ -> failwith <| sprintf "Unknown command: %s" payload.command

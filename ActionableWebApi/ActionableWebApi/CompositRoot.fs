@@ -20,16 +20,16 @@ open Akka.FSharp
 type CompositRoot 
         (actionable:ActionableActors,
          getUserNotificationStreamId:UserId -> StreamId,
-         fetchActionItem:System.Guid -> ActionItemReadModel option,
-         fetchActionItems:string -> ActionItemReadModel list,
-         fetchUserNotifications: string -> UserNotificationReadModel list option) = 
+         getActionItem:System.Guid -> ActionItemReadModel option,
+         getActionItems:string -> ActionItemReadModel list,
+         getUserNotifications: string -> UserNotificationReadModel list option) = 
     interface IHttpControllerActivator with
         member this.Create (request, controllerDescriptor, controllerType) =
             match controllerType with
             | t when t = typeof<ActionsController> -> 
-                new ActionsController (actionable.ActionItemAggregateProcessor.Tell, fetchActionItem, fetchActionItems) :> IHttpController
+                new ActionsController (actionable.ActionItemAggregateProcessor.Tell, getActionItem, getActionItems) :> IHttpController
             | t when t = typeof<UserNotificationsController> -> 
-                new UserNotificationsController (actionable.UserNotificationsAggregateProcessor.Tell, getUserNotificationStreamId, fetchUserNotifications) :> IHttpController
+                new UserNotificationsController (actionable.UserNotificationsAggregateProcessor.Tell, getUserNotificationStreamId, getUserNotifications) :> IHttpController
             | _ -> System.Activator.CreateInstance(controllerType) :?> IHttpController
 
    

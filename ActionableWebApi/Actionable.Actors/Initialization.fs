@@ -37,7 +37,8 @@ type ActionableActors
     let mutable _actionItemAggregateProcessor :IActorRef = null
     let mutable _userNotificationsPersistanceProcessor :IActorRef = null
     let mutable _userNotificationsAggregateProcessor :IActorRef = null
-    let mutable _actionItemToSessionTranlator :IActorRef = null
+
+    let mutable _actionItemBroadcaster :IActorRef = null
 
     do actors.StartActionItemPersister () 
     do actors.StartUserNotificationsPersister ()
@@ -61,7 +62,7 @@ type ActionableActors
     member this.UserNotificationsErrorBroadcaster with get () = _userNotificationsErrorBroadcaster    
     member this.UserNotificationsAggregateProcessor with get () = _userNotificationsAggregateProcessor
     
-    member this.ActionItemToSessionTranlator with get () = _actionItemToSessionTranlator 
+    member this.ActionItemBroadcaster with get () = _actionItemBroadcaster
     
     member this.StartActionItemPersister () = 
         _actionItemPersistanceProcessor <-
@@ -108,11 +109,11 @@ type ActionableActors
                 UserNotificationsModule.buildState, 
                 UserNotificationsModule.handle)
             |> spawn system "sessionNotificationsAggregateProcessor"
-        _actionItemToSessionTranlator <-     
-            spawn system "actionItemToSessionTranslator" 
+        _actionItemBroadcaster <-     
+            spawn system "actionItemNotifyer" 
                 <| actorOf (fun (envelope:Envelope<ActionItemEvent>) ->
                     let clientCmd = serializeClientCommand { 
-                        Actionable.Domain.ClientCommands.GetActionItem.Id = envelope.StreamId |> StreamId.unbox }
+                        Actionable.Domain.ClientCommands.ActionItemUpdated.Id = envelope.StreamId |> StreamId.unbox }
                     let streamId = getUserNotificationStreamId envelope.UserId
                     let cmd = 
                         envelope
@@ -121,5 +122,5 @@ type ActionableActors
                             |> UserNotificationsCommand.AppendMessage)
                     cmd |> _userNotificationsAggregateProcessor.Tell
                 )
-        _actionItemToSessionTranlator <! Subscribe _userNotificationsAggregateProcessor
+        _actionItemBroadcaster <! Subscribe _userNotificationsAggregateProcessor
 
