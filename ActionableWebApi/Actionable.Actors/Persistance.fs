@@ -27,11 +27,11 @@ type PersistingActor<'TState, 'TCommand, 'TEvent> =
                     let state = buildState uninitialized (events |> List.map unpack)
 
                     persist envelope.UserId envelope.StreamId state
-                    eventSubject.Tell <| Msg envelope  
+                    eventSubject.Tell <| envelope  
 
                 with
                     | ex -> 
-                        errorSubject.Tell <| Msg ex
+                        errorSubject.Tell <| ex
                                         
         actorOf2 persistEntity
         

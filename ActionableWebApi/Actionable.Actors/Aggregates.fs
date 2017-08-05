@@ -44,12 +44,11 @@ type AggregateAgent<'TState, 'TCommand, 'TEvent> =
                         (Version.box (version + 1s)) 
                         nevent
 
-                async {
-                        do! store.AppendEventAsync cmdenv.StreamId envelope 
-                        return Msg envelope
-                } |!> eventSubject
+                store.AppendEvent cmdenv.StreamId envelope 
+                eventSubject <! envelope
+
             with
-            | :? InvalidEvent as ex -> invalidMessageSubject <! Msg ex
-            | :? InvalidCommand as ex -> invalidMessageSubject <! Msg ex
+            | :? InvalidEvent as ex -> invalidMessageSubject <! ex
+            | :? InvalidCommand as ex -> invalidMessageSubject <! ex
         actorOf2 processMessage
 

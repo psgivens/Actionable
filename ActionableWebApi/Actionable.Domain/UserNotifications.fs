@@ -1,5 +1,6 @@
 ﻿module Actionable.Domain.UserNotificationsModule
 
+
 type UserNotification = { code:int; message:string; status:int }
 type UserNotifications = { userId:string; items:Map<int, UserNotification>}
 
@@ -74,3 +75,12 @@ let evolveState state event =
 let buildState =
     List.fold evolveState
 
+open Actionable.Domain.Infrastructure
+type UserNotificationsEventStore = {
+    GetEvents: StreamId -> UserNotificationsEvent list
+    AppendEvent: StreamId -> UserNotificationsEvent -> unit
+
+    }
+type IUserNotificationEventStore =
+    inherit IEventStore<Envelope<UserNotificationsEvent>>
+    abstract member GetEvents2: StreamId -> 'T list

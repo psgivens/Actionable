@@ -18,7 +18,7 @@ type Version = FsType<int16>
 
 type IEventStore<'T> = 
     abstract member GetEvents: StreamId -> 'T list
-    abstract member AppendEventAsync: StreamId -> 'T -> Async<unit>
+    abstract member AppendEvent: StreamId -> 'T -> unit
 
 
 [<AutoOpen>]

@@ -33,24 +33,22 @@ type ActionItemEventStore () =
             context.GetActionItemEvents<ActionItemEvent> streamId 
             |> Seq.toList 
             |> List.sortBy(fun x -> x.Version)
-        member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<ActionItemEvent>) =
-            async { 
-                try
-                    use context = new ActionableDbContext ()
-                    context.ActionItemEvents.Add (
-                        ActionItemEnvelopeEntity (  Id = envelope.Id,
-                                                    StreamId = StreamId.unbox envelope.StreamId,
-                                                    UserId = UserId.unbox envelope.UserId,
-                                                    TransactionId = TransId.unbox envelope.TransactionId,
-                                                    Version = Version.unbox envelope.Version,
-                                                    TimeStamp = envelope.Created,
-                                                    Event = JsonConvert.SerializeObject(envelope.Item)
-                                                    )) |> ignore         
-                    do! context |> saveChanges 
-                    do! async.Zero ()
-                with
-                    | ex -> System.Diagnostics.Debugger.Break () 
-                }
+        member this.AppendEvent (streamId:StreamId) (envelope:Envelope<ActionItemEvent>) =
+            try
+                use context = new ActionableDbContext ()
+                context.ActionItemEvents.Add (
+                    ActionItemEnvelopeEntity (  Id = envelope.Id,
+                                                StreamId = StreamId.unbox envelope.StreamId,
+                                                UserId = UserId.unbox envelope.UserId,
+                                                TransactionId = TransId.unbox envelope.TransactionId,
+                                                Version = Version.unbox envelope.Version,
+                                                TimeStamp = envelope.Created,
+                                                Event = JsonConvert.SerializeObject(envelope.Item)
+                                                )) |> ignore         
+                context.SaveChanges () |> ignore
+                
+            with
+                | ex -> System.Diagnostics.Debugger.Break () 
 
 let persistActionItem (UserId.Val(userId):UserId) (StreamId.Id (streamId):StreamId) state = 
     try

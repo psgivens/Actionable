@@ -70,7 +70,7 @@ type AggregateAgent<'TType, 'TState, 'TCommand, 'TEvent>
                             cmdenv.StreamId 
                             (Version.box (version + 1s)) 
                             nevent
-                    do! store.AppendEventAsync cmdenv.StreamId envelope 
+                    store.AppendEvent cmdenv.StreamId envelope 
 
                     communicationAgent.Post <| Message envelope
                 } |> Async.Start 

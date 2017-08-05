@@ -25,14 +25,14 @@ type ActionableActors
          persistItems:UserId -> StreamId -> ActionItemState -> unit,
          persistUserNotifications:UserId -> StreamId -> UserNotificationsState -> unit) as actors =
     
-    let _actionItemPersisterEventBroadcaster = subject system "actionItemPersisterEventBroadcaster" 
-    let _actionItemPersisterErrorBroadcaster = subject system "actionItemPersisterErrorBroadcaster"
-    let _actionItemEventBroadcaster = subject system "actionItemEventBroadcaster" 
-    let _actionItemErrorBroadcaster = subject system "actionItemErrorBroadcaster"
-    let _userNotificationsPersisterEventBroadcaster = subject system "userNotificationsPersisterEventBroadcaster"
-    let _userNotificationsPersisterErrorBroadcaster = subject system "userNotificationsPersisterErrorBroadcaster"    
-    let _userNotificationsEventBroadcaster = subject system "userNotificationsEventBroadcaster"
-    let _userNotificationsErrorBroadcaster = subject system "userNotificationsErrorBroadcaster"
+    let _actionItemPersisterEventBroadcaster, _actionItemPersisterEventBroadcaster' = subject system "actionItemPersisterEventBroadcaster" 
+    let _actionItemPersisterErrorBroadcaster, _actionItemPersisterErrorBroadcaster' = subject system "actionItemPersisterErrorBroadcaster"
+    let _actionItemEventBroadcaster, _actionItemEventBroadcaster' = subject system "actionItemEventBroadcaster" 
+    let _actionItemErrorBroadcaster, _actionItemErrorBroadcaster' = subject system "actionItemErrorBroadcaster"
+    let _userNotificationsPersisterEventBroadcaster, _userNotificationsPersisterEventBroadcaster' = subject system "userNotificationsPersisterEventBroadcaster"
+    let _userNotificationsPersisterErrorBroadcaster, _userNotificationsPersisterErrorBroadcaster' = subject system "userNotificationsPersisterErrorBroadcaster"    
+    let _userNotificationsEventBroadcaster, _userNotificationsEventBroadcaster' = subject system "userNotificationsEventBroadcaster"
+    let _userNotificationsErrorBroadcaster, _userNotificationsErrorBroadcaster' = subject system "userNotificationsErrorBroadcaster"
 
     let mutable _actionItemPersistanceProcessor :IActorRef = null
     let mutable _actionItemAggregateProcessor :IActorRef = null
@@ -68,8 +68,8 @@ type ActionableActors
     member this.StartActionItemPersister () = 
         _actionItemPersistanceProcessor <-
             PersistingActor<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
-                _actionItemPersisterEventBroadcaster,
-                _actionItemPersisterErrorBroadcaster,
+                _actionItemPersisterEventBroadcaster',
+                _actionItemPersisterErrorBroadcaster',
                 ActionItemState.DoesNotExist,
                 actionItemEventStore,
                 ActionItemModule.buildState,
@@ -80,8 +80,8 @@ type ActionableActors
     member this.StartUserNotificationsPersister () = 
         _userNotificationsPersistanceProcessor <-
             PersistingActor<UserNotificationsState, UserNotificationsCommand, UserNotificationsEvent>.Create (
-                _userNotificationsPersisterEventBroadcaster,
-                _userNotificationsPersisterErrorBroadcaster,
+                _userNotificationsPersisterEventBroadcaster',
+                _userNotificationsPersisterErrorBroadcaster',
                 UserNotificationsState.DoesNotExist,
                 notificationEventStore,
                 UserNotificationsModule.buildState,
@@ -92,8 +92,8 @@ type ActionableActors
     member this.StartActionItemAggregator () = 
         _actionItemAggregateProcessor <- 
             AggregateAgent<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
-                _actionItemEventBroadcaster,
-                _actionItemErrorBroadcaster,
+                _actionItemEventBroadcaster',
+                _actionItemErrorBroadcaster',
                 ActionItemState.DoesNotExist,
                 actionItemEventStore,
                 ActionItemModule.buildState, 
@@ -103,8 +103,8 @@ type ActionableActors
     member this.StartSessionNotificationsAggregator () = 
         _userNotificationsAggregateProcessor <- 
             AggregateAgent<UserNotificationsState, UserNotificationsCommand, UserNotificationsEvent>.Create (
-                _userNotificationsEventBroadcaster,
-                _userNotificationsErrorBroadcaster,
+                _userNotificationsEventBroadcaster',
+                _userNotificationsErrorBroadcaster',
                 UserNotificationsState.DoesNotExist,                
                 notificationEventStore,
                 UserNotificationsModule.buildState, 

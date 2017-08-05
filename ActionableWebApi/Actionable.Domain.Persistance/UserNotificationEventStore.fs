@@ -65,24 +65,24 @@ type UserNotificationEventStore () =
             context.GetUserNotificationEvents<UserNotificationsEvent> streamId 
             |> Seq.toList 
             |> List.sortBy(fun x -> x.Version)
-        member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<UserNotificationsEvent>) =
-            async { 
-                try
-                    use context = new ActionableDbContext ()
-                    context.ActionItemEvents.Add (
-                        ActionItemEnvelopeEntity (  Id = envelope.Id,
-                                                    StreamId = StreamId.unbox envelope.StreamId,
-                                                    UserId = UserId.unbox envelope.UserId,
-                                                    TransactionId = TransId.unbox envelope.TransactionId,
-                                                    Version = Version.unbox envelope.Version,
-                                                    TimeStamp = envelope.Created,
-                                                    Event = JsonConvert.SerializeObject(envelope.Item)
-                                                    )) |> ignore         
-                    do! Async.AwaitTask (context.SaveChangesAsync()) |> Async.Ignore 
-                    do! async.Zero ()
-                with
-                    | ex -> System.Diagnostics.Debugger.Break () 
-                }
+        member this.AppendEvent (streamId:StreamId) (envelope:Envelope<UserNotificationsEvent>) =
+            try
+                use context = new ActionableDbContext ()
+                context.ActionItemEvents.Add (
+                    ActionItemEnvelopeEntity (  Id = envelope.Id,
+                                                StreamId = StreamId.unbox envelope.StreamId,
+                                                UserId = UserId.unbox envelope.UserId,
+                                                TransactionId = TransId.unbox envelope.TransactionId,
+                                                Version = Version.unbox envelope.Version,
+                                                TimeStamp = envelope.Created,
+                                                Event = JsonConvert.SerializeObject(envelope.Item)
+                                                )) |> ignore         
+                context.SaveChanges() |> ignore
+                
+            with
+                | ex -> System.Diagnostics.Debugger.Break () 
+
+
 
 //let mapFieldValuesToDefinitions<'a when 'a :> FieldInstanceBase> 
 //        (fieldDefs:((int * (FieldDefinition seq)) seq))
