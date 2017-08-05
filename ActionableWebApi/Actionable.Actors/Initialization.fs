@@ -2,6 +2,7 @@
 
 open Akka.Actor
 open Akka.FSharp
+open Akka.FSharp.Actors
 
 open Actionable.Actors.Infrastructure
 open Actionable.Domain.Infrastructure.Envelope
@@ -21,8 +22,8 @@ type ActionableActors
          actionItemEventStore:IEventStore<Envelope<ActionItemEvent>>, 
          notificationEventStore:IEventStore<Envelope<UserNotificationsEvent>>,
          getUserNotificationStreamId:UserId -> StreamId,
-         persistItems:UserId -> StreamId -> ActionItemState -> Async<unit>,
-         persistUserNotifications:UserId -> StreamId -> UserNotificationsState -> Async<unit>) as actors =
+         persistItems:UserId -> StreamId -> ActionItemState -> unit,
+         persistUserNotifications:UserId -> StreamId -> UserNotificationsState -> unit) as actors =
     
     let _actionItemPersisterEventBroadcaster = subject system "actionItemPersisterEventBroadcaster" 
     let _actionItemPersisterErrorBroadcaster = subject system "actionItemPersisterErrorBroadcaster"
@@ -109,9 +110,11 @@ type ActionableActors
                 UserNotificationsModule.buildState, 
                 UserNotificationsModule.handle)
             |> spawn system "sessionNotificationsAggregateProcessor"
+        
         _actionItemBroadcaster <-     
-            spawn system "actionItemNotifyer" 
-                <| actorOf (fun (envelope:Envelope<ActionItemEvent>) ->
+            spawn system "actionItemNotifyer" (fun (mailbox:Actor<Envelope<ActionItemEvent>>) ->
+                let rec loop () = actor {
+                    let! envelope = mailbox.Receive ()
                     let clientCmd = serializeClientCommand { 
                         Actionable.Domain.ClientCommands.ActionItemUpdated.Id = envelope.StreamId |> StreamId.unbox }
                     let streamId = getUserNotificationStreamId envelope.UserId
@@ -121,6 +124,19 @@ type ActionableActors
                             (UserId.unbox envelope.UserId, 0, clientCmd)
                             |> UserNotificationsCommand.AppendMessage)
                     cmd |> _userNotificationsAggregateProcessor.Tell
-                )
-        _actionItemBroadcaster <! Subscribe _userNotificationsAggregateProcessor
+
+//                    async {
+//                        let! streamId = getUserNotificationStreamId envelope.UserId
+//
+//                        return
+//                            envelope
+//                            |> repackage streamId (fun actionItemEvent ->  
+//                                (UserId.unbox envelope.UserId, 0, clientCmd)
+//                                |> UserNotificationsCommand.AppendMessage)
+//                    } |!> _userNotificationsAggregateProcessor
+                    
+                    return! loop () }
+                loop ())
+        
+//        _actionItemBroadcaster <! Subscribe _userNotificationsAggregateProcessor
 

@@ -1,9 +1,13 @@
 namespace ActionableWebApi
 
 //open Actionable.Agents.Composition
+open Actionable.Actors.Composition
 open Actionable.Domain.Infrastructure
 
 open Owin
+
+open Akka
+open Akka.FSharp
  
 open System
 open System.Web.Http
@@ -65,15 +69,30 @@ type Startup () =
         ()
 
     let configureServices (config:HttpConfiguration) = 
-         config.Services.Replace(
+        let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
+        
+        let getUserNotificationStreamId userId :StreamId = failwith "not implemented"
+        let persistUserNotification userId streamId state = failwith "not implemented"
+        
+        let actionable = 
+            composeSystem 
+                (system, 
+                 Actionable.Domain.Persistance.EventSourcing.ActionItemEF.ActionItemEventStore(),
+                 Actionable.Domain.Persistance.EventSourcing.UserNotificationEF.UserNotificationEventStore(),
+                 getUserNotificationStreamId,
+                 Actionable.Domain.Persistance.EventSourcing.ActionItemEF.persistActionItem,
+                 persistUserNotification
+                 )
+
+        config.Services.Replace(
             typeof<System.Web.Http.Dispatcher.IHttpControllerActivator>,
-            ActionableWebApi.CompositRoot (
-                null :> Actionable.Actors.Initialization.ActionableActors, 
-                (fun x -> StreamId.create ()),
-                (fun x -> None),
-                (fun x -> []),
-                (fun x -> None)
-            ))
+                ActionableWebApi.CompositRoot (
+                    actionable,
+                    (fun x -> StreamId.create ()),
+                    (fun x -> None),
+                    (fun x -> []),
+                    (fun x -> None)
+                ))
 
     member this.Configuration (app:IAppBuilder) =
         //System.Diagnostics.Debugger.Break ()   

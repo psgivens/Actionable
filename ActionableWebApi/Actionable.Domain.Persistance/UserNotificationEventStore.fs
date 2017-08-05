@@ -38,52 +38,52 @@ type Actionable.Data.ActionableDbContext with
             | _ -> return failwith "A user cannot have more than one user notification stream"                
         }
 
-//
-//
-//type Actionable.Data.ActionableDbContext with 
-//    member this.GetUserNotificationEvents<'a> (StreamId.Id (aggregateId):StreamId) :seq<Envelope<'a>>= 
-//        query {
-//            for event in this.ActionItemEvents do
-//            where (event.StreamId = aggregateId)
-//            select event
-//        } |> Seq.map (fun event ->
-//                {
-//                    Id = event.Id
-//                    UserId = UserId.box event.UserId
-//                    StreamId = StreamId.box aggregateId
-//                    TransactionId = TransId.box event.TransactionId
-//                    Version = Version.box (event.Version)
-//                    Created = event.TimeStamp
-//                    Item = (JsonConvert.DeserializeObject<'a> event.Event)
-//                }
-//            )
-//
-//type ActionItemEventStore () =
-//    interface IEventStore<Envelope<UserNotificationsEvent>> with
-//        member this.GetEvents (streamId:StreamId) =
-//            use context = new ActionableDbContext ()
-//            context.GetUserNotificationEvents<ActionItemEvent> streamId 
-//            |> Seq.toList 
-//            |> List.sortBy(fun x -> x.Version)
-//        member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<UserNotificationsEvent>) =
-//            async { 
-//                try
-//                    use context = new ActionableDbContext ()
-//                    context.ActionItemEvents.Add (
-//                        ActionItemEnvelopeEntity (  Id = envelope.Id,
-//                                                    StreamId = StreamId.unbox envelope.StreamId,
-//                                                    UserId = UserId.unbox envelope.UserId,
-//                                                    TransactionId = TransId.unbox envelope.TransactionId,
-//                                                    Version = Version.unbox envelope.Version,
-//                                                    TimeStamp = envelope.Created,
-//                                                    Event = JsonConvert.SerializeObject(envelope.Item)
-//                                                    )) |> ignore         
-//                    do! Async.AwaitTask (context.SaveChangesAsync()) |> Async.Ignore 
-//                    do! async.Zero ()
-//                with
-//                    | ex -> System.Diagnostics.Debugger.Break () 
-//                }
-//
+
+
+type Actionable.Data.ActionableDbContext with 
+    member this.GetUserNotificationEvents<'a> (StreamId.Id (aggregateId):StreamId) :seq<Envelope<'a>>= 
+        query {
+            for event in this.ActionItemEvents do
+            where (event.StreamId = aggregateId)
+            select event
+        } |> Seq.map (fun event ->
+                {
+                    Id = event.Id
+                    UserId = UserId.box event.UserId
+                    StreamId = StreamId.box aggregateId
+                    TransactionId = TransId.box event.TransactionId
+                    Version = Version.box (event.Version)
+                    Created = event.TimeStamp
+                    Item = (JsonConvert.DeserializeObject<'a> event.Event)
+                }
+            )
+
+type UserNotificationEventStore () =
+    interface IEventStore<Envelope<UserNotificationsEvent>> with
+        member this.GetEvents (streamId:StreamId) =
+            use context = new ActionableDbContext ()
+            context.GetUserNotificationEvents<UserNotificationsEvent> streamId 
+            |> Seq.toList 
+            |> List.sortBy(fun x -> x.Version)
+        member this.AppendEventAsync (streamId:StreamId) (envelope:Envelope<UserNotificationsEvent>) =
+            async { 
+                try
+                    use context = new ActionableDbContext ()
+                    context.ActionItemEvents.Add (
+                        ActionItemEnvelopeEntity (  Id = envelope.Id,
+                                                    StreamId = StreamId.unbox envelope.StreamId,
+                                                    UserId = UserId.unbox envelope.UserId,
+                                                    TransactionId = TransId.unbox envelope.TransactionId,
+                                                    Version = Version.unbox envelope.Version,
+                                                    TimeStamp = envelope.Created,
+                                                    Event = JsonConvert.SerializeObject(envelope.Item)
+                                                    )) |> ignore         
+                    do! Async.AwaitTask (context.SaveChangesAsync()) |> Async.Ignore 
+                    do! async.Zero ()
+                with
+                    | ex -> System.Diagnostics.Debugger.Break () 
+                }
+
 //let mapFieldValuesToDefinitions<'a when 'a :> FieldInstanceBase> 
 //        (fieldDefs:((int * (FieldDefinition seq)) seq))
 //        (fields:Map<string,string>)     
@@ -114,8 +114,8 @@ type Actionable.Data.ActionableDbContext with
 //    (fieldType:FieldType)
 //    (constructField:(FieldDefinition*string)->'a) = 
 //    System.Collections.Generic.List<'a>() |> mapFieldValuesToDefinitions fieldDefs fields fieldType constructField (fun x y -> ())
-
-
+//
+//
 //let persistUserNotification (UserId.Val(userId):UserId) (StreamId.Id (streamId):StreamId) state = 
 //    async {
 //        try

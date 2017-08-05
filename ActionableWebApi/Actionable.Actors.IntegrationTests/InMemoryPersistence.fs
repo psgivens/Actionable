@@ -36,14 +36,11 @@ type InMemoryPersistence () =
     let mutable userNotifications = Map.empty<string,UserNotificationEntity list>
 
     member this.PersistActionItem userId (StreamId.Id(streamId)) state = 
-        async {
-            match state with
-            | ActionItemState.DoesNotExist -> 
-                actionItems <- actionItems.Remove streamId
-            | ActionItemState.State(item) ->
-                actionItems <- actionItems.Add(streamId, item)
-            do! async.Zero ()
-        }
+        match state with
+        | ActionItemState.DoesNotExist -> 
+            actionItems <- actionItems.Remove streamId
+        | ActionItemState.State(item) ->
+            actionItems <- actionItems.Add(streamId, item)
 
     member this.GetActionItem itemId :ActionItemReadModel option= 
     
@@ -66,24 +63,21 @@ type InMemoryPersistence () =
         |> List.map snd
 
     member this.PersistUserNotification (UserId.Val(userId)) (StreamId.Id(streamId)) state = 
-        async {
-            match state with
-            | UserNotificationsState.DoesNotExist -> 
-                userNotifications <- userNotifications.Remove userId
-            | UserNotificationsState.State (notifications) ->
-                userNotifications <- userNotifications.Add(userId, 
-                    notifications.items
-                    |> Map.map (fun key item ->
-                        UserNotificationEntity(
-                            Id = key,
-                            UserIdentity = userId,
-                            Code = item.code,
-                            Message = item.message,
-                            Status = item.status
-                        ))
-                    |> Map.toList |> List.map snd)
-            do! async.Zero ()
-        }
+        match state with
+        | UserNotificationsState.DoesNotExist -> 
+            userNotifications <- userNotifications.Remove userId
+        | UserNotificationsState.State (notifications) ->
+            userNotifications <- userNotifications.Add(userId, 
+                notifications.items
+                |> Map.map (fun key item ->
+                    UserNotificationEntity(
+                        Id = key,
+                        UserIdentity = userId,
+                        Code = item.code,
+                        Message = item.message,
+                        Status = item.status
+                    ))
+                |> Map.toList |> List.map snd)
 
     member this.GetUserNotifications userId :UserNotificationReadModel list option= 
         match userNotifications |> Map.tryFind userId with

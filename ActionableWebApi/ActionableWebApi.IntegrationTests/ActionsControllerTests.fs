@@ -50,10 +50,9 @@ type TestUser () =
 
 type ``Web - Integration Tests``() = 
     let testUser = TestUser()
-    let actionable = HttpTest.actionable
     let compositRoot = 
         CompositRoot 
-            (actionable, 
+            (HttpTest.actionable, 
              HttpTest.getUserNotificationStreamId,
              HttpTest.inMemoryPersistence.GetActionItem, 
              HttpTest.inMemoryPersistence.GetActionItems, 

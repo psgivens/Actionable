@@ -33,7 +33,10 @@ type GreetingActor () as g =
         fun (greet:Greet) -> 
             printfn "Hello %s" greet.Who)
 
-type ProcessorMessage = ProcessJob of int * int * int
+type ProcessorMessage = 
+    | ProcessJob of int * int * int
+    | ProcessJob2 of int * int * int
+
 
 open System
 type SStreamId = SStreamId of Guid with 
@@ -75,15 +78,19 @@ let main argv =
 
     let processor (mailbox: Actor<_>) = 
         let rec loop () = actor {
-            let! ProcessJob (x,y,z) = mailbox.Receive ()
-            printfn "Processor: received ProcessJob %i %i %i" x y z
+            let! item = mailbox.Receive ()
+            match item with 
+            | ProcessJob (x,y,z) ->
+                printfn "Processor 1: received ProcessJob %i %i %i" x y z
+            | ProcessJob2 (x,y,z) ->
+                printfn "Processor 2: received ProcessJob %i %i %i" x y z
             return! loop ()
         }
         loop ()
       
     let processorRef = spawn system "processor" processor
     processorRef <! ProcessJob (1, 3, 5)
-    (ProcessJob (7, 9, 11)) |> processorRef.Tell
+    (ProcessJob2 (7, 9, 11)) |> processorRef.Tell
       
     let system = ActorSystem.Create "MySystem"
 

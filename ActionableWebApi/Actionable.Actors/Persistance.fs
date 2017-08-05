@@ -13,7 +13,7 @@ type PersistingActor<'TState, 'TCommand, 'TEvent> =
          uninitialized:'TState,
          store:IEventStore<Envelope<'TEvent>>, 
          buildState:'TState -> 'TEvent list -> 'TState,
-         persist:UserId -> StreamId -> 'TState -> Async<unit>) =
+         persist:UserId -> StreamId -> 'TState -> unit) =
 
         let persistEntity (mailbox:Actor<Envelope<'TEvent>>) (envelope:Envelope<'TEvent>) =
                 try
@@ -26,10 +26,8 @@ type PersistingActor<'TState, 'TCommand, 'TEvent> =
                     // Build current state
                     let state = buildState uninitialized (events |> List.map unpack)
 
-                    async {
-                        do! persist envelope.UserId envelope.StreamId state
-                        return Msg envelope
-                    } |!> eventSubject
+                    persist envelope.UserId envelope.StreamId state
+                    eventSubject.Tell <| Msg envelope  
 
                 with
                     | ex -> 

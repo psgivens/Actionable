@@ -94,7 +94,7 @@ type PersistingAgent<'TType, 'TState, 'TCommand, 'TEvent>
         (uninitialized:'TState,
          store:IEventStore<Envelope<'TEvent>>, 
          buildState:'TState -> 'TEvent list -> 'TState,
-         persist:UserId -> StreamId -> 'TState -> Async<unit>) =
+         persist:UserId -> StreamId -> 'TState -> unit) =
 
     let eventSubject = new Subjects.Subject<Envelope<'TEvent>> ()
     let communicationAgent = new Agent<AgentCommunication<Envelope<'TEvent>>>(fun inbox ->
@@ -111,26 +111,25 @@ type PersistingAgent<'TType, 'TState, 'TCommand, 'TEvent>
 
     let createCsp () = 
         let csp = new Agent<Envelope<'TEvent>>(fun inbox ->
-                let rec iloop () = 
-                    async {
-                        let! envelope = inbox.Receive ()
-                        try
-                            // Retrieve existing events
-                            let events = 
-                                store.GetEvents envelope.StreamId
-                                // Crudely remove concurrency errors
-                                |> List.distinctBy (fun e -> e.Version)
+            let rec iloop () = 
+                async {
+                    let! envelope = inbox.Receive ()
+                    try
+                        // Retrieve existing events
+                        let events = 
+                            store.GetEvents envelope.StreamId
+                            // Crudely remove concurrency errors
+                            |> List.distinctBy (fun e -> e.Version)
                 
-                            // Build current state
-                            let state = buildState uninitialized (events |> List.map unpack)
+                        // Build current state
+                        let state = buildState uninitialized (events |> List.map unpack)
 
-                            do! persist envelope.UserId envelope.StreamId state
-
-                        with
-                            | ex -> communicationAgent.Post <| Error ex
-                        return! iloop ()
-                    }
-                iloop ())
+                        persist envelope.UserId envelope.StreamId state
+                    with
+                        | ex -> communicationAgent.Post <| Error ex
+                    return! iloop ()
+                }
+            iloop ())
         csp.Start ()
         csp
 

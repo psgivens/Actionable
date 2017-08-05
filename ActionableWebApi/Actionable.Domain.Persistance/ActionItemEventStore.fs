@@ -53,45 +53,43 @@ type ActionItemEventStore () =
                 }
 
 let persistActionItem (UserId.Val(userId):UserId) (StreamId.Id (streamId):StreamId) state = 
-    async {
-        try
-            use context = new ActionableDbContext ()
-            let! entity = context.TaskInstances.FindAsync(streamId) |> Async.AwaitTask
+    try
+        use context = new ActionableDbContext ()
+        let entity = context.TaskInstances.Find(streamId) 
 
-            match state with
-            | DoesNotExist -> 
-                match entity with
-                | null -> ()
-                | entity ->
-                    context.TaskInstances.Remove (entity) |> ignore
-                    do! context |> saveChanges
+        match state with
+        | DoesNotExist -> 
+            match entity with
+            | null -> ()
+            | entity ->
+                context.TaskInstances.Remove (entity) |> ignore
+                context.SaveChanges () |> ignore
 
-            | State (item) -> 
+        | State (item) -> 
                 
-                let typeDef = query {
-                    for taskType in context.TaskTypeDefinitions do
-                    where (taskType.FullyQualifiedName = "actionable.actionitem")
-                    select taskType
-                    exactlyOne }
-                let groupedFields = typeDef.Fields |> Seq.groupBy (fun f -> f.FieldType)
+            let typeDef = query {
+                for taskType in context.TaskTypeDefinitions do
+                where (taskType.FullyQualifiedName = "actionable.actionitem")
+                select taskType
+                exactlyOne }
+            let groupedFields = typeDef.Fields |> Seq.groupBy (fun f -> f.FieldType)
                 
-                match entity with                   
-                | null ->
-                    typeDef 
-                    |> buildTaskInstance userId streamId item.Fields
-                    |> context.TaskInstances.Add 
-                    |> ignore
+            match entity with                   
+            | null ->
+                typeDef 
+                |> buildTaskInstance userId streamId item.Fields
+                |> context.TaskInstances.Add 
+                |> ignore
                     
-                | entity ->
-                    updateTaskInstance item.Fields entity
-                    |> ignore
+            | entity ->
+                updateTaskInstance item.Fields entity
+                |> ignore
                     
-                do! context |> saveChanges
-        with
-        // TODO: Need better exeception handling. Logging, perhaps?
-        | ex -> System.Diagnostics.Debugger.Break ()
-    }
-
+            context.SaveChanges |> ignore
+    with
+    // TODO: Need better exeception handling. Logging, perhaps?
+    | ex -> System.Diagnostics.Debugger.Break ()
+    
 let fetchActionItems userId = 
     let first f queryable =     
         System.Linq.Queryable.First (queryable, f)
