@@ -78,6 +78,7 @@
     <Compile Include="Persistance.fs" />
     <Compile Include="Aggregates.fs" />
     <Compile Include="NewtonsoftHack.fs" />
+    <Compile Include="Initialization2.fs" />
     <Compile Include="Initialization.fs" />
     <Compile Include="Composition.fs" />
   </ItemGroup>

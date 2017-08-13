@@ -17,8 +17,8 @@ type ResponseCode () =
      
 [<CLIMutable>]
 type ActionItemIdRendition = 
-    { ActionItemId: string } with
-    member this.GetActionItemId () = Guid.Parse this.ActionItemId
+    { Id: string } with
+    member this.GetActionItemId () = Guid.Parse this.Id
 
 [<CLIMutable>]
 type AddActionItemRendition = {

@@ -3,6 +3,7 @@ namespace ActionableWebApi
 //open Actionable.Agents.Composition
 open Actionable.Actors.Composition
 open Actionable.Domain.Infrastructure
+open Actionable.Domain.Persistance.EventSourcing
 
 open Owin
 
@@ -70,28 +71,25 @@ type Startup () =
 
     let configureServices (config:HttpConfiguration) = 
         let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
-        
-        let getUserNotificationStreamId userId :StreamId = failwith "not implemented"
-        let persistUserNotification userId streamId state = failwith "not implemented"
-        
+                
         let actionable = 
             composeSystem 
                 (system, 
-                 Actionable.Domain.Persistance.EventSourcing.ActionItemEF.ActionItemEventStore(),
-                 Actionable.Domain.Persistance.EventSourcing.UserNotificationEF.UserNotificationEventStore(),
-                 getUserNotificationStreamId,
-                 Actionable.Domain.Persistance.EventSourcing.ActionItemEF.persistActionItem,
-                 persistUserNotification
+                 ActionItemEF.ActionItemEventStore(),
+                 UserNotificationEF.UserNotificationEventStore(),
+                 UserNotificationEF.getUserNotificationStreamId,
+                 ActionItemEF.persistActionItem,
+                 UserNotificationEF.persistUserNotification
                  )
 
         config.Services.Replace(
             typeof<System.Web.Http.Dispatcher.IHttpControllerActivator>,
                 ActionableWebApi.CompositRoot (
                     actionable,
-                    (fun x -> StreamId.create ()),
-                    (fun x -> None),
-                    (fun x -> []),
-                    (fun x -> None)
+                    UserNotificationEF.getUserNotificationStreamId,
+                    ActionItemEF.fetchActionItem,
+                    ActionItemEF.fetchActionItems,
+                    UserNotificationEF.fetchUserNotifications
                 ))
 
     member this.Configuration (app:IAppBuilder) =

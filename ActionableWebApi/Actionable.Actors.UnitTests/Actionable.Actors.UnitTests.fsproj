@@ -59,6 +59,11 @@
     <Content Include="packages.config" />
     <Content Include="App.config" />
     <Compile Include="InMemoryPersistence.fs" />
+    <Compile Include="EventSourceGherkin.fs" />
+    <Compile Include="ActionItemGherkin.fs" />
+    <Compile Include="UserNotificationsGherkin.fs" />
+    <Compile Include="DomainActionItemTests.fs" />
+    <Compile Include="DomainNotificationsTests.fs" />
     <Compile Include="ActorsActionItemTests.fs" />
   </ItemGroup>
   <ItemGroup>

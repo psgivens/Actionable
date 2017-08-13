@@ -80,19 +80,28 @@ type ActionsController
                 Message = "TODO: Respond with transaction Id",
                 Time = DateTimeOffset.Now.ToString("o")))
 
-
-    member this.Get () =
-        this.Request.CreateResponse(
-            HttpStatusCode.OK,
-            ActionItemsQueryResponse (
-                Results = getActionItems (this.User.Identity.GetUserId()),
-                Time = DateTimeOffset.Now.ToString("o")))
+//
+//    [<HttpGet; Route()>]
+//    member this.Get () =
+//        this.Request.CreateResponse(
+//            HttpStatusCode.OK,
+//            ActionItemsQueryResponse (
+//                Results = getActionItems (this.User.Identity.GetUserId()),
+//                Time = DateTimeOffset.Now.ToString("o")))
        
+//    [<HttpGet; Route("{id}")>]
     member this.Get (item: ActionItemIdRendition) =
-        this.Request.CreateResponse(
-            HttpStatusCode.OK,
-            ActionItemQueryResponse (
-                Result = ((item.GetActionItemId () |> getActionItem) |> Option.get),
-                Time = DateTimeOffset.Now.ToString("o")))
+        if obj.ReferenceEquals (item, null) then 
+            this.Request.CreateResponse(
+                HttpStatusCode.OK,
+                ActionItemsQueryResponse (
+                    Results = getActionItems (this.User.Identity.GetUserId()),
+                    Time = DateTimeOffset.Now.ToString("o")))
+        else
+            this.Request.CreateResponse(
+                HttpStatusCode.OK,
+                ActionItemQueryResponse (
+                    Result = ((item.GetActionItemId () |> getActionItem) |> Option.get),
+                    Time = DateTimeOffset.Now.ToString("o")))
         
 

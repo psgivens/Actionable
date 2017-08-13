@@ -83,23 +83,27 @@ let persistActionItem (UserId.Val(userId):UserId) (StreamId.Id (streamId):Stream
                 updateTaskInstance item.Fields entity
                 |> ignore
                     
-            context.SaveChanges |> ignore
+            context.SaveChanges () |> ignore
     with
     // TODO: Need better exeception handling. Logging, perhaps?
     | ex -> System.Diagnostics.Debugger.Break ()
-    
-let fetchActionItems userId = 
+
+let fetchActionItem itemId = 
     let first f queryable =     
         System.Linq.Queryable.First (queryable, f)
     use context = new ActionableDbContext ()
-    let t = 
-        query {
-            for typ in context.TaskTypeDefinitions do
-            where (typ.FullyQualifiedName = "actionable.actionitem")
-            select typ
-            exactlyOne
-        }
+    query {
+        for actionItem in context.TaskInstances do
+        where (actionItem.Id = itemId)
+        select actionItem }
+    |> Seq.map mapToActionItemReadModel
+    |> Seq.toList
+    |> Seq.head
+    |> Some
 
+    
+let fetchActionItems userId = 
+    use context = new ActionableDbContext ()
     query {
         for actionItem in context.TaskInstances do
         where (actionItem.TaskTypeDefinitionId = 1 && actionItem.UserIdentity = userId)
