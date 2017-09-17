@@ -51,26 +51,27 @@ type Startup () =
 
     let  configureAuth (config:HttpConfiguration, app:IAppBuilder) =
         app.CreatePerOwinContext (ApplicationDbContext.Create) |> ignore
-        app.CreatePerOwinContext<ApplicationUserManager> (fun options context -> ApplicationUserManager.Create(options,context)) |> ignore
+        app.CreatePerOwinContext<ApplicationUserManager> (fun options context -> 
+            ApplicationUserManager.Create(options,context)) |> ignore
 
         // By default, request authorization
         config.Filters.Add (AuthorizeAttribute())
 
-        let publicClientId = "self";
-        let OAuthOptions = 
-            new OAuthAuthorizationServerOptions (
-                TokenEndpointPath = new PathString("/Token"),
-                Provider = new ApplicationOAuthProvider(publicClientId),
-                AuthorizeEndpointPath = new PathString("/api/v1/Account/ExternalLogin"),
-                AccessTokenExpireTimeSpan = TimeSpan.FromDays(14.0),
-                // In production mode set AllowInsecureHttp = false
-                AllowInsecureHttp = true
-            )
-        app.UseOAuthBearerTokens OAuthOptions
-        ()
+        let publicClientId = "self"
+        
+        OAuthAuthorizationServerOptions (
+            TokenEndpointPath = new PathString("/Token"),
+            Provider = new ApplicationOAuthProvider(publicClientId),
+            AuthorizeEndpointPath = new PathString("/api/v1/Account/ExternalLogin"),
+            AccessTokenExpireTimeSpan = TimeSpan.FromDays(14.0),
+            // In production mode set AllowInsecureHttp = false
+            AllowInsecureHttp = true)
+        |> app.UseOAuthBearerTokens         
 
     let configureServices (config:HttpConfiguration) = 
-        let system = Configuration.defaultConfig () |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
+        let system = 
+            Configuration.defaultConfig () 
+            |> System.create (sprintf "%s-%A" "ActionableSystem" (System.Guid.NewGuid ()))
                 
         let actionable = 
             composeSystem 

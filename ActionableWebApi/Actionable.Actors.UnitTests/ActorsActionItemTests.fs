@@ -12,8 +12,10 @@ open Actionable.Domain.Infrastructure
 open Actionable.Domain
 open Actionable.Domain.ActionItemModule
 open Actionable.Domain.UserNotificationsModule
+open Actionable.Domain.ClientCommands
 
 open Actionable.Actors 
+open Actionable.Actors.Infrastructure
 open Actionable.Actors.Initialization
 open Actionable.Actors.Composition
 
@@ -98,9 +100,10 @@ type ActionItemActorSpecs () =
         let errProbe = this.CreateTestProbe "errorProbe"
         let inMemoryPersistence = InMemoryPersistence ()
         let memoryStore = MemoryStore<ActionItemEvent> ()
+        
         let actionItemPersistingProcessor =             
             (PersistingActor<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
-                evtProbe, 
+                evtProbe,
                 errProbe,
                 ActionItemState.DoesNotExist,
                 memoryStore,
@@ -110,7 +113,7 @@ type ActionItemActorSpecs () =
 
         let actionItemAggregateProcessor =             
             (AggregateAgent<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
-                actionItemPersistingProcessor , 
+                actionItemPersistingProcessor,
                 errProbe,
                 ActionItemState.DoesNotExist,
                 memoryStore,
@@ -154,8 +157,160 @@ type ActionItemActorSpecs () =
                 (Version.box 1s) 
                 (["actionable.title",title;
                     "actionable.description", description'] 
-                    |> Map.ofList
-                    |> ActionItemCommand.Update)
+                 |> Map.ofList
+                 |> ActionItemCommand.Update)
+
+        ignore <|
+            evtProbe.ExpectMsgFrom<Envelope<ActionItemEvent>> 
+                (   actionItemPersistingProcessor, 
+                    TimeSpan.FromSeconds 3.0 |> Nullable,
+                    "Expecting an updated event") 
+
+        let results' = inMemoryPersistence.GetActionItems "sampleuserid"
+        let item' = 
+            match results' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
+                with
+                | None -> failwith "Could not find item"
+                | Some item' -> item'
+
+        Assert.Equal (item.Id, item'.Id)
+        Assert.Equal (item'.Fields.["actionable.description"], description')
+
+        actionItemAggregateProcessor
+            <! envelopWithDefaults 
+                (UserId.box "sampleuserid")
+                (TransId.create ())
+                (streamId) 
+                (Version.box 1s) 
+                (ActionItemCommand.Delete)
+                
+        ignore <|
+            evtProbe.ExpectMsgFrom<Envelope<ActionItemEvent>> 
+                (   actionItemPersistingProcessor, 
+                    System.Nullable<System.TimeSpan> <| System.TimeSpan.FromSeconds 3.0,
+                    "Expecting a deleted event") 
+
+        let results'' = inMemoryPersistence.GetActionItems "sampleuserid"
+        let item''' = results'' |> List.tryFind (fun r -> r.Id = StreamId.unbox streamId)
+    
+        Assert.Equal (item''', None)
+
+
+
+    [<Fact>]    
+    member this.``Notify: Create, retrieve, update, and delete an item`` () =  
+        let evtProbe = this.CreateTestProbe "eventProbe"
+        let evtProbe2 = this.CreateTestProbe "eventProbe2"
+        let errProbe = this.CreateTestProbe "errorProbe"
+        let inMemoryPersistence = InMemoryPersistence ()
+        let actionItemMemoryStory = MemoryStore<ActionItemEvent> ()
+        let notificationMemoryStory = MemoryStore<UserNotificationsEvent> ()
+        let actionItemEventSubject, actionItemEventPoster = 
+            subject this.Sys "actionItemEventBroadcaster" 
+        let testUserStreamId = StreamId.create ()
+        let getUserNotificationStreamId userId = testUserStreamId
+
+        
+        let actionItemPersistingProcessor =             
+            (PersistingActor<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
+                evtProbe,
+                errProbe,
+                ActionItemState.DoesNotExist,
+                actionItemMemoryStory,
+                ActionItemModule.buildState,
+                inMemoryPersistence.PersistActionItem))
+            |> spawn this.Sys "actionItemPersistor"            
+        actionItemEventSubject <! Subscribe actionItemPersistingProcessor 
+        
+        let userNotificationsAggregateProcessor =
+            AggregateAgent<UserNotificationsState, UserNotificationsCommand, UserNotificationsEvent>.Create (
+                evtProbe2,
+                errProbe,
+                UserNotificationsState.DoesNotExist,                
+                notificationMemoryStory,
+                UserNotificationsModule.buildState, 
+                UserNotificationsModule.handle)
+            |> spawn this.Sys "sessionNotificationsAggregateProcessor"
+        
+        
+        let actionItemBroadcaster =
+            spawn this.Sys "actionItemNotifyer" (fun (mailbox:Actor<Envelope<ActionItemEvent>>) ->
+                let rec loop () = actor {
+                    let! envelope = mailbox.Receive ()
+                    let clientCmd = serializeClientCommand { 
+                        Actionable.Domain.ClientCommands.ActionItemUpdated.Id = envelope.StreamId |> StreamId.unbox }
+                    let streamId = getUserNotificationStreamId envelope.UserId
+                    let cmd = 
+                        envelope
+                        |> repackage streamId (fun actionItemEvent ->  
+                            (UserId.unbox envelope.UserId, 0, clientCmd)
+                            |> UserNotificationsCommand.AppendMessage)
+                    cmd |> userNotificationsAggregateProcessor.Tell
+                   
+                    return! loop () }
+                loop ())
+        
+        actionItemEventSubject <! Subscribe actionItemBroadcaster
+                        
+        let actionItemAggregateProcessor =             
+            (AggregateAgent<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
+                actionItemEventPoster,
+                errProbe,
+                ActionItemState.DoesNotExist,
+                actionItemMemoryStory,
+                ActionItemModule.buildState,
+                ActionItemModule.handle))
+            |> spawn this.Sys "actionItemAggregate" 
+
+        let title = "Hoobada Da Jubada Jistaliee"
+        let description = "hiplity fublin"
+        let description' = "hiplity dw mitibly fublin"
+        let streamId = StreamId.create ()
+        actionItemAggregateProcessor
+            <! envelopWithDefaults 
+                (UserId.box "sampleuserid")
+                (TransId.create ())
+                (streamId) 
+                (Version.box 0s) 
+                (("sampleuserid", StreamId.unbox streamId, 
+                  ["actionable.title",title;
+                    "actionable.description", description] 
+                    |> Map.ofList)
+                 |> ActionItemCommand.Create)
+
+        let resultx = 
+            evtProbe2.ExpectMsgFrom<Envelope<UserNotificationsEvent>>
+                (   userNotificationsAggregateProcessor,
+                    TimeSpan.FromSeconds 3.0 |> Nullable,
+                    "Expecting a notification event")
+
+        let itemx = 
+            match resultx.Item with
+            | MessageCreated (_, _, _, _) -> resultx.Item
+            | _ -> failwith "incorrect return"
+
+        let result = 
+            evtProbe.ExpectMsgFrom<Envelope<ActionItemEvent>> 
+                (   actionItemPersistingProcessor, 
+                    TimeSpan.FromSeconds 3.0 |> Nullable,
+                    "Expecting a created event") 
+        let item = 
+            match result.Item with
+            | ActionItemEvent.Created item -> item
+            | _ -> failwith "wrong event type"
+        
+        Assert.Equal (item.Fields.["actionable.description"], description)
+
+        actionItemAggregateProcessor
+            <! envelopWithDefaults 
+                (UserId.box "sampleuserid")
+                (TransId.create ())
+                (streamId) 
+                (Version.box 1s) 
+                (["actionable.title",title;
+                    "actionable.description", description'] 
+                 |> Map.ofList
+                 |> ActionItemCommand.Update)
 
         ignore <|
             evtProbe.ExpectMsgFrom<Envelope<ActionItemEvent>> 

@@ -32,11 +32,11 @@ let composeSystem
     let actionable = ActionableActors (system, actionItemEventStore, notificationsEventStore, getUserNotificationStreamId, persistActionItem, persistUserNotifications)
 
     //actionable.ActionItemEventBroadcaster <! Subscribe actionable.actionItemPersistanceProcessor
-    actionable.ActionItemEventBroadcaster <! Subscribe actionable.ActionItemBroadcaster    
+    //actionable.ActionItemEventBroadcaster <! Subscribe actionable.ActionItemBroadcaster    
 
     //actionable.UserNotificationsEventBroadcaster <! Subscribe actionable.userNotificationsPersistanceProcessor
         
-    actionable.UserNotificationsEventBroadcaster <! debugger system "event"
-    actionable.UserNotificationsErrorBroadcaster <! debugger system "error"
+    //actionable.UserNotificationsEventBroadcaster <! debugger system "event"
+    //actionable.UserNotificationsErrorBroadcaster <! debugger system "error"
     
     actionable

@@ -65,6 +65,9 @@
     <Compile Include="DomainActionItemTests.fs" />
     <Compile Include="DomainNotificationsTests.fs" />
     <Compile Include="ActorsActionItemTests.fs" />
+    <None Include="References.fsx" />
+    <None Include="ScriptSetup.fsx" />
+    <None Include="Practice.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Akka">

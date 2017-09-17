@@ -43,8 +43,9 @@ type ActionableActors
 
     do actors.StartActionItemPersister () 
     do actors.StartUserNotificationsPersister ()
-    do actors.StartActionItemAggregator ()
     do actors.StartSessionNotificationsAggregator ()
+    do actors.StartActionItemAggregator ()
+    
 
     member this.ActionItemPersisterEventBroadcaster with get () = _actionItemPersisterEventBroadcaster 
     member this.ActionItemPersisterErrorBroadcaster with get () = _actionItemPersisterErrorBroadcaster     
@@ -90,6 +91,10 @@ type ActionableActors
         _userNotificationsEventBroadcaster <! Subscribe _userNotificationsPersistanceProcessor
 
     member this.StartActionItemAggregator () = 
+
+        _actionItemEventBroadcaster <! Subscribe _actionItemBroadcaster
+        //actionable.ActionItemEventBroadcaster <! Subscribe actionable.ActionItemBroadcaster    
+
         _actionItemAggregateProcessor <- 
             AggregateAgent<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
                 _actionItemEventBroadcaster',
@@ -124,19 +129,6 @@ type ActionableActors
                             (UserId.unbox envelope.UserId, 0, clientCmd)
                             |> UserNotificationsCommand.AppendMessage)
                     cmd |> _userNotificationsAggregateProcessor.Tell
-
-//                    async {
-//                        let! streamId = getUserNotificationStreamId envelope.UserId
-//
-//                        return
-//                            envelope
-//                            |> repackage streamId (fun actionItemEvent ->  
-//                                (UserId.unbox envelope.UserId, 0, clientCmd)
-//                                |> UserNotificationsCommand.AppendMessage)
-//                    } |!> _userNotificationsAggregateProcessor
-                    
+                   
                     return! loop () }
                 loop ())
-        
-//        _actionItemBroadcaster <! Subscribe _userNotificationsAggregateProcessor
-

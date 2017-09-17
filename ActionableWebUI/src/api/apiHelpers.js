@@ -38,6 +38,9 @@ export function makeRequest (opts) {
       });
     }
     const params = opts.params;
+
+    // TODO: Move JSON.stringify code here
+
     // // We'll need to stringify if we've been given an object
     // // If we have a string, this is skipped.
     // if (params && typeof params === 'object') {
