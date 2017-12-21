@@ -33,7 +33,8 @@ type ApplicationOAuthProvider (publicClientId:string) =
         async {            
             let userManager = context.OwinContext.GetUserManager<ApplicationUserManager>()
             let! user = 
-                userManager.FindAsync(context.UserName, context.Password) 
+                (context.UserName, context.Password) 
+                |> userManager.FindAsync
                 |> Async.AwaitTask
 
             if (user = Unchecked.defaultof<ApplicationUser>) then

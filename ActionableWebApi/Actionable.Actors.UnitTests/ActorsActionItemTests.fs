@@ -210,8 +210,13 @@ type ActionItemActorSpecs () =
         let testUserStreamId = StreamId.create ()
         let getUserNotificationStreamId userId = testUserStreamId
 
-        
-        let actionItemPersistingProcessor =             
+        (* 
+        Given: we have a user-notification-aggregater, an action-item-persistor,
+        an action-item-to-user-notification-translator, and an action-item-aggregator,
+        wired together.
+        *)
+                
+        let actionItemPersistor =             
             (PersistingActor<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
                 evtProbe,
                 errProbe,
@@ -220,9 +225,9 @@ type ActionItemActorSpecs () =
                 ActionItemModule.buildState,
                 inMemoryPersistence.PersistActionItem))
             |> spawn this.Sys "actionItemPersistor"            
-        actionItemEventSubject <! Subscribe actionItemPersistingProcessor 
+        actionItemEventSubject <! Subscribe actionItemPersistor 
         
-        let userNotificationsAggregateProcessor =
+        let userNotificationsAggregater =
             AggregateAgent<UserNotificationsState, UserNotificationsCommand, UserNotificationsEvent>.Create (
                 evtProbe2,
                 errProbe,
@@ -230,11 +235,10 @@ type ActionItemActorSpecs () =
                 notificationMemoryStory,
                 UserNotificationsModule.buildState, 
                 UserNotificationsModule.handle)
-            |> spawn this.Sys "sessionNotificationsAggregateProcessor"
-        
-        
-        let actionItemBroadcaster =
-            spawn this.Sys "actionItemNotifyer" (fun (mailbox:Actor<Envelope<ActionItemEvent>>) ->
+            |> spawn this.Sys "userNotificationsAggregater"
+               
+        let actionItemToNotificationTranslator =
+            spawn this.Sys "actionItemToNotificationTranslator" (fun (mailbox:Actor<Envelope<ActionItemEvent>>) ->
                 let rec loop () = actor {
                     let! envelope = mailbox.Receive ()
                     let clientCmd = serializeClientCommand { 
@@ -245,14 +249,13 @@ type ActionItemActorSpecs () =
                         |> repackage streamId (fun actionItemEvent ->  
                             (UserId.unbox envelope.UserId, 0, clientCmd)
                             |> UserNotificationsCommand.AppendMessage)
-                    cmd |> userNotificationsAggregateProcessor.Tell
+                    cmd |> userNotificationsAggregater.Tell
                    
                     return! loop () }
-                loop ())
-        
-        actionItemEventSubject <! Subscribe actionItemBroadcaster
+                loop ())        
+        actionItemEventSubject <! Subscribe actionItemToNotificationTranslator
                         
-        let actionItemAggregateProcessor =             
+        let actionItemAggregator =             
             (AggregateAgent<ActionItemState, ActionItemCommand, ActionItemEvent>.Create (
                 actionItemEventPoster,
                 errProbe,
@@ -260,13 +263,17 @@ type ActionItemActorSpecs () =
                 actionItemMemoryStory,
                 ActionItemModule.buildState,
                 ActionItemModule.handle))
-            |> spawn this.Sys "actionItemAggregate" 
+            |> spawn this.Sys "actionItemAggregator" 
 
+
+        (* 
+        When: we send an action-item command to the action-item-aggregator
+        *)
         let title = "Hoobada Da Jubada Jistaliee"
         let description = "hiplity fublin"
         let description' = "hiplity dw mitibly fublin"
         let streamId = StreamId.create ()
-        actionItemAggregateProcessor
+        actionItemAggregator
             <! envelopWithDefaults 
                 (UserId.box "sampleuserid")
                 (TransId.create ())
@@ -278,9 +285,13 @@ type ActionItemActorSpecs () =
                     |> Map.ofList)
                  |> ActionItemCommand.Create)
 
+        (* 
+        Then: we receive a MessageCreated notification event from the 
+        user-notifications-aggregator
+        *)
         let resultx = 
             evtProbe2.ExpectMsgFrom<Envelope<UserNotificationsEvent>>
-                (   userNotificationsAggregateProcessor,
+                (   userNotificationsAggregater,
                     TimeSpan.FromSeconds 3.0 |> Nullable,
                     "Expecting a notification event")
 
@@ -289,9 +300,13 @@ type ActionItemActorSpecs () =
             | MessageCreated (_, _, _, _) -> resultx.Item
             | _ -> failwith "incorrect return"
 
+
+
+
+
         let result = 
             evtProbe.ExpectMsgFrom<Envelope<ActionItemEvent>> 
-                (   actionItemPersistingProcessor, 
+                (   actionItemPersistor, 
                     TimeSpan.FromSeconds 3.0 |> Nullable,
                     "Expecting a created event") 
         let item = 
@@ -301,7 +316,7 @@ type ActionItemActorSpecs () =
         
         Assert.Equal (item.Fields.["actionable.description"], description)
 
-        actionItemAggregateProcessor
+        actionItemAggregator
             <! envelopWithDefaults 
                 (UserId.box "sampleuserid")
                 (TransId.create ())
@@ -314,7 +329,7 @@ type ActionItemActorSpecs () =
 
         ignore <|
             evtProbe.ExpectMsgFrom<Envelope<ActionItemEvent>> 
-                (   actionItemPersistingProcessor, 
+                (   actionItemPersistor, 
                     TimeSpan.FromSeconds 3.0 |> Nullable,
                     "Expecting an updated event") 
 
@@ -328,7 +343,7 @@ type ActionItemActorSpecs () =
         Assert.Equal (item.Id, item'.Id)
         Assert.Equal (item'.Fields.["actionable.description"], description')
 
-        actionItemAggregateProcessor
+        actionItemAggregator
             <! envelopWithDefaults 
                 (UserId.box "sampleuserid")
                 (TransId.create ())
@@ -338,7 +353,7 @@ type ActionItemActorSpecs () =
                 
         ignore <|
             evtProbe.ExpectMsgFrom<Envelope<ActionItemEvent>> 
-                (   actionItemPersistingProcessor, 
+                (   actionItemPersistor, 
                     System.Nullable<System.TimeSpan> <| System.TimeSpan.FromSeconds 3.0,
                     "Expecting a deleted event") 
 

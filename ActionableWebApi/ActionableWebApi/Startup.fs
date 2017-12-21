@@ -33,6 +33,19 @@ type HttpRouteDefaults = { Controller : string; Id : obj }
 type TemplateRouteDefaults = { Id: obj }
 
 type Startup () =
+    let configureCors (app:IAppBuilder) (config:HttpConfiguration) =
+        let cors = new EnableCorsAttribute(origins= "http://localhost:3001", headers= "*", methods= "*")
+        app.UseCors (
+            CorsOptions(
+                PolicyProvider = CorsPolicyProvider(
+                    PolicyResolver = (
+                        fun request -> 
+                            let x = request.Path.Value
+                            if request.Path.Value = "/Token" then cors.GetCorsPolicyAsync (null, CancellationToken.None)
+                            else Task.FromResult<CorsPolicy> null)))) |> ignore
+
+        config.EnableCors(cors)
+
     let configureRoutes (config:HttpConfiguration) = 
          
         config.MapHttpAttributeRoutes();
@@ -94,23 +107,11 @@ type Startup () =
                 ))
 
     member this.Configuration (app:IAppBuilder) =
-        //System.Diagnostics.Debugger.Break ()   
-//        failwith "Testing my errors"
 
         let config = GlobalConfiguration.Configuration
 
-        let cors = new EnableCorsAttribute(origins= "http://localhost:3001", headers= "*", methods= "*")
-        app.UseCors (
-            CorsOptions(
-                PolicyProvider = CorsPolicyProvider(
-                    PolicyResolver = (
-                        fun request -> 
-                            let x = request.Path.Value
-                            if request.Path.Value = "/Token" then cors.GetCorsPolicyAsync (null, CancellationToken.None)
-                            else Task.FromResult<CorsPolicy> null)))) |> ignore
-
-        config.EnableCors(cors)
-
+        // Can be removed if using a reverse-proxy
+        configureCors app
         configureRoutes config
         config.Formatters.JsonFormatter.SerializerSettings.ContractResolver <-
             Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()

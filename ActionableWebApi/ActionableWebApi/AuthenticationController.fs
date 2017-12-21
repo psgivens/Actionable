@@ -27,8 +27,9 @@ type AccountController (userManager:ApplicationUserManager, accessTokenFormat:IS
     member this.UserManager
         with get () :ApplicationUserManager = 
             if _userManager = null
-                then this.Request.GetOwinContext().GetUserManager<ApplicationUserManager>()
-                else _userManager
+            then _userManager <- this.Request.GetOwinContext().GetUserManager<ApplicationUserManager>()
+                 _userManager
+            else _userManager
         and set (value) = _userManager <- value
 
     member val AccessTokenFormat:ISecureDataFormat<AuthenticationTicket> = accessTokenFormat with get, set
@@ -74,11 +75,13 @@ type AccountController (userManager:ApplicationUserManager, accessTokenFormat:IS
     member this.Register (model:RegisterBindingRendition) :Task<IHttpActionResult> =         
         
         async {
-            if (not this.ModelState.IsValid) then return this.badRequestModel () :> IHttpActionResult
+            if (not this.ModelState.IsValid) 
+            then return this.badRequestModel () :> IHttpActionResult
             else 
                 let user = new ApplicationUser( UserName = model.Email, Email = model.Email)
                 let! result = this.UserManager.CreateAsync(user, model.Password) |> Async.AwaitTask 
-                if (not result.Succeeded) then return this.GetErrorResult (result) 
+                if (not result.Succeeded) 
+                then return this.GetErrorResult (result) 
                 else return this.ok() 
                     
             } |> Async.StartAsTask
@@ -93,29 +96,41 @@ type AccountController (userManager:ApplicationUserManager, accessTokenFormat:IS
     [<Route("ExternalLogin", Name = "ExternalLogin")>]
     member this.GetExternalLogin (provider:string, error:string) :Task<IHttpActionResult> = 
         async {        
-            if error = null then return this.redirectError error :> IHttpActionResult
-            elif (not this.User.Identity.IsAuthenticated) then return new ChallengeResult (provider, this) :> IHttpActionResult
+            if error = null 
+            then return this.redirectError error :> IHttpActionResult
+            elif (not this.User.Identity.IsAuthenticated) 
+            then return ChallengeResult (provider, this) :> IHttpActionResult
             else
                 let externalLogin = ExternalLoginData.FromIdentity (this.User.Identity :?> System.Security.Claims.ClaimsIdentity) 
-                if externalLogin = null then return this.internalServerError () 
-                elif (externalLogin.LoginProvider <> provider) then
+                if externalLogin = null 
+                then return this.internalServerError () 
+                elif (externalLogin.LoginProvider <> provider) 
+                then
                     this.Authentication.SignOut DefaultAuthenticationTypes.ExternalCookie
-                    return new ChallengeResult (provider, this) :> IHttpActionResult
+                    return ChallengeResult (provider, this) :> IHttpActionResult
                 else
                     let! user = 
-                        this.UserManager.FindAsync (new UserLoginInfo(externalLogin.LoginProvider, externalLogin.ProviderKey))
+                        (externalLogin.LoginProvider, externalLogin.ProviderKey)
+                        |> UserLoginInfo
+                        |> this.UserManager.FindAsync 
                         |> Async.AwaitTask
                     let hasRegistered = user <> null
-                    if hasRegistered then 
+                    if hasRegistered 
+                    then 
                         this.Authentication.SignOut DefaultAuthenticationTypes.ExternalCookie
-                        let! oAuthIdentity = user.GenerateUserIdentityAsync (this.UserManager, OAuthDefaults.AuthenticationType) |> Async.AwaitTask
-                        let! cookieIdentity = user.GenerateUserIdentityAsync (this.UserManager, CookieAuthenticationDefaults.AuthenticationType) |> Async.AwaitTask
-
+                        let! oAuthIdentity = 
+                            (this.UserManager, OAuthDefaults.AuthenticationType)
+                            |> user.GenerateUserIdentityAsync  
+                            |> Async.AwaitTask
+                        let! cookieIdentity = 
+                            (this.UserManager, CookieAuthenticationDefaults.AuthenticationType) 
+                            |> user.GenerateUserIdentityAsync 
+                            |> Async.AwaitTask
                         let properties = ApplicationOAuthProvider.CreateProperties user.UserName
                         this.Authentication.SignIn (properties, oAuthIdentity, cookieIdentity)
                     else 
                         let claims = externalLogin.GetClaims ()
-                        let identity = new ClaimsIdentity (claims, OAuthDefaults.AuthenticationType)
+                        let identity = ClaimsIdentity (claims, OAuthDefaults.AuthenticationType)
                         this.Authentication.SignIn identity
                     return this.ok ()
                 

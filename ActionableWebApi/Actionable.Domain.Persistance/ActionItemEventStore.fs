@@ -55,42 +55,32 @@ let persistActionItem (UserId.Val(userId):UserId) (StreamId.Id (streamId):Stream
         use context = new ActionableDbContext ()
         let entity = context.TaskInstances.Find(streamId) 
 
-        match state with
-        | DoesNotExist -> 
-            match entity with
-            | null -> ()
-            | entity ->
-                context.TaskInstances.Remove (entity) |> ignore
-                context.SaveChanges () |> ignore
+        match state, entity with
+        | DoesNotExist, null -> ()
+        | DoesNotExist, entity ->
+            context.TaskInstances.Remove (entity) |> ignore
+            context.SaveChanges () |> ignore
 
-        | State (item) -> 
-                
-            let typeDef = query {
+        | State item, null ->                 
+            query {
                 for taskType in context.TaskTypeDefinitions do
                 where (taskType.FullyQualifiedName = "actionable.actionitem")
                 select taskType
                 exactlyOne }
-            let groupedFields = typeDef.Fields |> Seq.groupBy (fun f -> f.FieldType)
-                
-            match entity with                   
-            | null ->
-                typeDef 
-                |> buildTaskInstance userId streamId item.Fields
-                |> context.TaskInstances.Add 
-                |> ignore
+            |> buildTaskInstance userId streamId item.Fields
+            |> context.TaskInstances.Add 
+            |> ignore
+            context.SaveChanges () |> ignore
                     
-            | entity ->
-                updateTaskInstance item.Fields entity
-                |> ignore
-                    
+        | State item, entity ->
+            updateTaskInstance item.Fields entity |> ignore                    
             context.SaveChanges () |> ignore
     with
     // TODO: Need better exeception handling. Logging, perhaps?
     | ex -> System.Diagnostics.Debugger.Break ()
 
 let fetchActionItem itemId = 
-    let first f queryable =     
-        System.Linq.Queryable.First (queryable, f)
+    let first f queryable = System.Linq.Queryable.First (queryable, f)
     use context = new ActionableDbContext ()
     query {
         for actionItem in context.TaskInstances do
@@ -100,7 +90,6 @@ let fetchActionItem itemId =
     |> Seq.toList
     |> Seq.head
     |> Some
-
     
 let fetchActionItems userId = 
     use context = new ActionableDbContext ()

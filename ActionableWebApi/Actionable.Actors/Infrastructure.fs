@@ -8,8 +8,6 @@ type SubjectAction =
     | Subscribe of IActorRef
     | Unsubscribe of IActorRef
 
-
-
 let subject<'TMessage> system name = 
     
     let subject' = spawn system name (fun mailbox -> 

@@ -13,8 +13,8 @@ type HomeRendition () =
     [<DefaultValue>] val mutable Time : string
 
 type HomeController() =
-    inherit ApiController()
-    member this.Get() =
+    inherit ApiController ()
+    member this.Get () =
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             HomeRendition(

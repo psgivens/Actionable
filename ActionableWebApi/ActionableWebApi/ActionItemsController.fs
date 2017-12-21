@@ -26,38 +26,31 @@ type ActionItemQueryResponse () =
     [<DefaultValue>] val mutable Time : string
                 
 type ActionsController 
-        (post:Envelope<ActionItemCommand>->unit, 
-         getActionItem:System.Guid->ActionItemReadModel option, 
-         getActionItems:string->ActionItemReadModel list) =
+        (post:Envelope<ActionItemCommand> -> unit, 
+         getActionItem:System.Guid -> ActionItemReadModel option, 
+         getActionItems:string -> ActionItemReadModel list) =
     inherit ApiController ()
     
-    let (|GuidPattern|_|) guid = 
-        match Guid.TryParse guid with 
-        | (true, id) -> Some(id)
-        | _ -> Option.None
     interface IRequiresSessionState
     member this.Post (item: AddActionItemRendition) =
         // TODO Parse Int16.Parse(item.Status)
-        let envelope = 
-            match item.Id with 
-            | GuidPattern id ->
-                envelopWithDefaults 
-                    (UserId.box <| this.User.Identity.GetUserId()) 
-                    (TransId.create ()) 
-                    (StreamId.box id) 
-                    (Version.box 0s)
-                    (Update(item.Fields))
-            | _ ->
+        let userId = this.User.Identity.GetUserId()
+        let streamId, cmd = 
+            match item.Id |> Guid.TryParse with
+            | true, id -> 
+                StreamId.box id, Update (item.Fields)
+            | _ -> 
                 let streamId = StreamId.create ()
-                let userId = this.User.Identity.GetUserId()
-                envelopWithDefaults 
-                    (UserId.box <| userId) 
-                    (TransId.create ()) 
-                    (StreamId.create ())
-                    (Version.box 0s)
-                    (Create(userId, streamId |> StreamId.unbox, item.Fields))
+                streamId, (Create(userId, streamId |> StreamId.unbox, item.Fields))
+            
+        cmd
+        |> envelopWithDefaults 
+            (UserId.box <| userId) 
+            (TransId.create ()) 
+            (StreamId.create ())
+            (Version.box 0s)
+        |> post
 
-        post envelope
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             ResponseCode(
@@ -65,15 +58,14 @@ type ActionsController
                 Time = DateTimeOffset.Now.ToString("o")))
 
     member this.Delete (item: ActionItemIdRendition) =
-        let envelope =
-            envelopWithDefaults
-                (UserId.box <| this.User.Identity.GetUserId())        
-                (TransId.create ()) 
-                (StreamId.box <| item.GetActionItemId ())
-                (Version.box 0s)
-                (Delete)
+        Delete
+        |> envelopWithDefaults
+            (UserId.box <| this.User.Identity.GetUserId())        
+            (TransId.create ()) 
+            (StreamId.box <| item.GetActionItemId ())
+            (Version.box 0s)
+        |> post      
 
-        post envelope
         this.Request.CreateResponse(
             HttpStatusCode.OK,
             ResponseCode(

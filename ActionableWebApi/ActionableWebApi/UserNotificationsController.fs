@@ -37,19 +37,18 @@ type UserNotificationsController
     member this.Post (item: UserNotificationIdRendition) =
         async {
             let itemId = item.GetId ()
-            let userId = this.User.Identity.GetUserId()
+            let userId = this.User.Identity.GetUserId() |> UserId.box
             use context = new ActionableDbContext()
             let! streamId = async {
-                return getUserNotificationStreamId <| UserId.box userId }
+                return getUserNotificationStreamId userId }
             
-            let envelope = 
-                envelopWithDefaults
-                    (UserId.box userId)        
-                    (TransId.create ()) 
-                    (streamId)
-                    (Version.box 0s)
-                    (UserNotificationsCommand.AcknowledgeMessage itemId)
-            envelope |> post
+            (UserNotificationsCommand.AcknowledgeMessage itemId)
+            |> envelopWithDefaults
+                (userId)        
+                (TransId.create ()) 
+                (streamId)
+                (Version.box 0s)                    
+            |> post
 
             return this.Request.CreateResponse(
                 HttpStatusCode.OK,

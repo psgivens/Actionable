@@ -20,15 +20,18 @@ type ExternalLoginData (loginProvider:string, providerKey:string, userName:strin
     member this.GetClaims () : IList<Claim> =
         let claims = List<Claim> ();
         claims.Add (Claim(ClaimTypes.NameIdentifier, this.ProviderKey, null, this.LoginProvider))
-        if (not <| String.IsNullOrEmpty(this.UserName)) then claims.Add (Claim(ClaimTypes.Name, this.UserName, null, this.LoginProvider))
+        if (not <| String.IsNullOrEmpty(this.UserName)) 
+        then claims.Add (Claim(ClaimTypes.Name, this.UserName, null, this.LoginProvider))
         claims :> IList<Claim>
     
     static member FromIdentity (identity:ClaimsIdentity) :ExternalLoginData = 
         if (identity = null) then null
         else
             let providerKeyClaim = identity.FindFirst (ClaimTypes.NameIdentifier)
-            if (providerKeyClaim = null || String.IsNullOrEmpty(providerKeyClaim.Issuer) || String.IsNullOrEmpty (providerKeyClaim.Value)) then null
-            else if (providerKeyClaim.Issuer = ClaimsIdentity.DefaultIssuer) then null
+            if (providerKeyClaim = null || String.IsNullOrEmpty(providerKeyClaim.Issuer) || String.IsNullOrEmpty (providerKeyClaim.Value)) 
+            then null
+            elif (providerKeyClaim.Issuer = ClaimsIdentity.DefaultIssuer) 
+            then null
             else ExternalLoginData 
                     (providerKeyClaim.Issuer, 
                     providerKeyClaim.Value, 
