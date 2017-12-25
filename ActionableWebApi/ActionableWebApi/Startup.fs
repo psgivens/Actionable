@@ -34,7 +34,7 @@ type TemplateRouteDefaults = { Id: obj }
 
 type Startup () =
     let configureCors (app:IAppBuilder) (config:HttpConfiguration) =
-        let cors = new EnableCorsAttribute(origins= "http://localhost:3001", headers= "*", methods= "*")
+        let cors = new EnableCorsAttribute(origins= "http://localhost:3001", headers="*", methods="POST, GET, OPTIONS")
         app.UseCors (
             CorsOptions(
                 PolicyProvider = CorsPolicyProvider(
@@ -111,7 +111,7 @@ type Startup () =
         let config = GlobalConfiguration.Configuration
 
         // Can be removed if using a reverse-proxy
-        configureCors app
+        configureCors app config
         configureRoutes config
         config.Formatters.JsonFormatter.SerializerSettings.ContractResolver <-
             Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()

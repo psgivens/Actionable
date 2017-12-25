@@ -47,7 +47,7 @@ type ActionsController
         |> envelopWithDefaults 
             (UserId.box <| userId) 
             (TransId.create ()) 
-            (StreamId.create ())
+            (streamId)
             (Version.box 0s)
         |> post
 

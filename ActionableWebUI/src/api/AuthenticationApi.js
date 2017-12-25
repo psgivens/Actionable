@@ -19,7 +19,9 @@ export default class AuthenticationApi {
       params: formBody,
       headers: {
         "Content-type": "application/x-www-form-urlencoded; charset=UTF-8"
-      }
+      },
+      success: function(result) { console.log("success: "); console.log(result);},
+      error: function(result) { console.log("error");}
     });
   }
 }
